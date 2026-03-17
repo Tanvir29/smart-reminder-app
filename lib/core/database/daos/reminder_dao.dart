@@ -9,21 +9,21 @@ class ReminderDao extends DatabaseAccessor<AppDatabase>
     with _$ReminderDaoMixin {
   ReminderDao(super.db);
 
-  Future<List<Reminder>> getAllReminders() => db.select(reminders).get();
+  Future<List<ReminderSchema>> getAllReminders() => db.select(reminders).get();
 
-  Future<Reminder?> getReminderById(String id) =>
+  Future<ReminderSchema?> getReminderById(String id) =>
       (db.select(reminders)..where((r) => r.id.equals(id))).getSingleOrNull();
 
-  Future<List<Reminder>> getRemindersByStatus(String status) =>
+  Future<List<ReminderSchema>> getRemindersByStatus(String status) =>
       (db.select(reminders)..where((r) => r.status.equals(status))).get();
 
-  Future<List<Reminder>> getRemindersByProfile(String profileId) =>
+  Future<List<ReminderSchema>> getRemindersByProfile(String profileId) =>
       (db.select(reminders)..where((r) => r.profileId.equals(profileId))).get();
 
-  Future<List<Reminder>> getScheduledReminders() =>
+  Future<List<ReminderSchema>> getScheduledReminders() =>
       (db.select(reminders)..where((r) => r.status.equals('scheduled'))).get();
 
-  Future<List<Reminder>> getScheduledRemindersBefore(DateTime time) =>
+  Future<List<ReminderSchema>> getScheduledRemindersBefore(DateTime time) =>
       (db.select(reminders)
             ..where((r) => r.status.equals('scheduled'))
             ..where(
@@ -36,7 +36,7 @@ class ReminderDao extends DatabaseAccessor<AppDatabase>
   Future<void> insertReminder(RemindersCompanion reminder) =>
       db.into(reminders).insert(reminder);
 
-  Future<void> updateReminder(Reminder reminder) =>
+  Future<void> updateReminder(ReminderSchema reminder) =>
       db.update(reminders).replace(reminder);
 
   Future<void> deleteReminder(String id) =>

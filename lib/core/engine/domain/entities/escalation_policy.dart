@@ -4,32 +4,21 @@
 /// creation time so later setting changes don't affect in-flight reminders.
 library;
 
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'escalation_policy.freezed.dart';
+
 /// Controls how a reminder escalates through snooze and escalation stages.
-class EscalationPolicy {
-  /// Number of snoozes allowed before auto-escalation. Default: 3.
-  final int maxSnoozes;
+@freezed
+class EscalationPolicy with _$EscalationPolicy {
+  const factory EscalationPolicy({
+    @Default(3) int maxSnoozes,
+    @Default(5) int snoozeBaseDelayMinutes,
+    @Default(300) int responseWindowSeconds,
+    @Default(3) int maxEscalations,
+    @Default(600) int escalationIntervalSeconds,
+    @Default(30) int confirmationWindowSeconds,
+  }) = _EscalationPolicy;
 
-  /// Base snooze delay in minutes. Actual = base * (snooze_count + 1). Default: 5.
-  final int snoozeBaseDelayMinutes;
-
-  /// Seconds to wait for user response before escalating. Default: 300.
-  final int responseWindowSeconds;
-
-  /// Number of escalation attempts before marking as missed. Default: 3.
-  final int maxEscalations;
-
-  /// Seconds between escalation attempts. Default: 600.
-  final int escalationIntervalSeconds;
-
-  /// Seconds for confirmation interaction proof. Default: 30.
-  final int confirmationWindowSeconds;
-
-  const EscalationPolicy({
-    this.maxSnoozes = 3,
-    this.snoozeBaseDelayMinutes = 5,
-    this.responseWindowSeconds = 300,
-    this.maxEscalations = 3,
-    this.escalationIntervalSeconds = 600,
-    this.confirmationWindowSeconds = 30,
-  });
+  const EscalationPolicy._();
 }

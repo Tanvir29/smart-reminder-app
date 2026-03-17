@@ -33,8 +33,7 @@ class NotificationService {
 
     await _notifications
         .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
+            AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
   }
 
@@ -48,16 +47,17 @@ class NotificationService {
     }
   }
 
-  Future<void> showReminderNotification({
+  Future<void> showMedicationReminder({
     required int id,
     required String title,
     required String body,
     String? payload,
   }) async {
     const androidDetails = AndroidNotificationDetails(
-      'reminder_channel',
+      'medication_reminders',
       'Medication Reminders',
-      channelDescription: 'Notifications for medication reminders',
+      channelDescription:
+          'Notifications for medication reminders with Snooze/Done actions',
       importance: Importance.high,
       priority: Priority.high,
       actions: [
@@ -70,6 +70,74 @@ class NotificationService {
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+    );
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      id,
+      title,
+      body,
+      notificationDetails,
+      payload: payload,
+    );
+  }
+
+  Future<void> showCycleReminder({
+    required int id,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      'cycle_reminders',
+      'Cycle Reminders',
+      channelDescription: 'Cycle tracking reminders',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      id,
+      title,
+      body,
+      notificationDetails,
+      payload: payload,
+    );
+  }
+
+  Future<void> showSystemNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      'system',
+      'System',
+      channelDescription: 'Backup completion, streak notifications',
+      importance: Importance.low,
+      priority: Priority.low,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: false,
+      presentBadge: true,
+      presentSound: false,
     );
 
     const notificationDetails = NotificationDetails(

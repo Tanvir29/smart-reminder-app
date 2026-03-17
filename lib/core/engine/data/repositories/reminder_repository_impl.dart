@@ -1,40 +1,57 @@
-/// Concrete implementation of [ReminderRepository] using Drift DAO.
-///
-/// MiniMax fills in: all method implementations using ReminderDao,
-/// transactional writes, automatic reminder_logs insertion on status change.
-library;
-
+import 'package:smart_reminder_app/core/database/daos/reminder_dao.dart';
+import 'package:smart_reminder_app/core/engine/data/mappers/reminder_mapper.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
 
-/// Drift-backed reminder repository.
 class ReminderRepositoryImpl implements ReminderRepository {
-  // TODO: MiniMax — inject ReminderDao
+  final ReminderDao _dao;
+  final ReminderMapper _mapper;
+
+  ReminderRepositoryImpl({
+    required ReminderDao dao,
+    required ReminderMapper mapper,
+  })  : _dao = dao,
+        _mapper = mapper;
 
   @override
   Future<void> save(Reminder reminder) async {
-    throw UnimplementedError();
+    final schema = _mapper.toSchema(reminder);
+    await _dao.insertReminder(schema);
   }
 
   @override
   Future<Reminder?> getById(String id) async {
-    throw UnimplementedError();
+    final schema = await _dao.getReminderById(id);
+    if (schema == null) return null;
+    return _mapper.toEntity(schema);
   }
 
   @override
   Future<List<Reminder>> getByStatus(ReminderStatus status) async {
-    throw UnimplementedError();
+    final schemas = await _dao.getRemindersByStatus(status.name);
+    return schemas.map(_mapper.toEntity).toList();
   }
 
   @override
   Future<List<Reminder>> getScheduledBefore(int timestampMillis) async {
-    throw UnimplementedError();
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(timestampMillis);
+    final schemas = await _dao.getScheduledRemindersBefore(dateTime);
+    return schemas.map(_mapper.toEntity).toList();
   }
 
   @override
   Future<void> updateStatus(String id, ReminderStatus newStatus) async {
-    throw UnimplementedError();
+    final existing = await _dao.getReminderById(id);
+    if (existing == null) return;
+
+    final entity = _mapper.toEntity(existing);
+    final updatedEntity = entity.copyWith(
+      status: newStatus,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    final updatedSchema = _mapper.toSchemaForUpdate(updatedEntity);
+    await _dao.updateReminder(updatedSchema);
   }
 
   @override
@@ -44,6 +61,12 @@ class ReminderRepositoryImpl implements ReminderRepository {
     required int eventTimestamp,
     String? metadata,
   }) async {
-    throw UnimplementedError();
+    final log = _mapper.toLogCompanion(
+      reminderId: reminderId,
+      eventType: eventType,
+      eventTimestamp: eventTimestamp,
+      metadata: metadata,
+    );
+    await _dao.logReminderEvent(log);
   }
 }

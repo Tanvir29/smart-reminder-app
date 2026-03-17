@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+@DataClassName('ReminderSchema')
 class Reminders extends Table {
   TextColumn get id => text()();
   TextColumn get profileId => text().withDefault(const Constant('default'))();

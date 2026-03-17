@@ -439,7 +439,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
 }
 
 class $RemindersTable extends Reminders
-    with TableInfo<$RemindersTable, Reminder> {
+    with TableInfo<$RemindersTable, ReminderSchema> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -649,7 +649,7 @@ class $RemindersTable extends Reminders
   String get actualTableName => $name;
   static const String $name = 'reminders';
   @override
-  VerificationContext validateIntegrity(Insertable<Reminder> instance,
+  VerificationContext validateIntegrity(Insertable<ReminderSchema> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -804,9 +804,9 @@ class $RemindersTable extends Reminders
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Reminder map(Map<String, dynamic> data, {String? tablePrefix}) {
+  ReminderSchema map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Reminder(
+    return ReminderSchema(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       profileId: attachedDatabase.typeMapping
@@ -869,7 +869,7 @@ class $RemindersTable extends Reminders
   }
 }
 
-class Reminder extends DataClass implements Insertable<Reminder> {
+class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
   final String id;
   final String profileId;
   final String type;
@@ -895,7 +895,7 @@ class Reminder extends DataClass implements Insertable<Reminder> {
   final String? cancellationReason;
   final String syncStatus;
   final int xpValue;
-  const Reminder(
+  const ReminderSchema(
       {required this.id,
       required this.profileId,
       required this.type,
@@ -1006,10 +1006,10 @@ class Reminder extends DataClass implements Insertable<Reminder> {
     );
   }
 
-  factory Reminder.fromJson(Map<String, dynamic> json,
+  factory ReminderSchema.fromJson(Map<String, dynamic> json,
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Reminder(
+    return ReminderSchema(
       id: serializer.fromJson<String>(json['id']),
       profileId: serializer.fromJson<String>(json['profileId']),
       type: serializer.fromJson<String>(json['type']),
@@ -1076,7 +1076,7 @@ class Reminder extends DataClass implements Insertable<Reminder> {
     };
   }
 
-  Reminder copyWith(
+  ReminderSchema copyWith(
           {String? id,
           String? profileId,
           String? type,
@@ -1102,7 +1102,7 @@ class Reminder extends DataClass implements Insertable<Reminder> {
           Value<String?> cancellationReason = const Value.absent(),
           String? syncStatus,
           int? xpValue}) =>
-      Reminder(
+      ReminderSchema(
         id: id ?? this.id,
         profileId: profileId ?? this.profileId,
         type: type ?? this.type,
@@ -1140,8 +1140,8 @@ class Reminder extends DataClass implements Insertable<Reminder> {
         syncStatus: syncStatus ?? this.syncStatus,
         xpValue: xpValue ?? this.xpValue,
       );
-  Reminder copyWithCompanion(RemindersCompanion data) {
-    return Reminder(
+  ReminderSchema copyWithCompanion(RemindersCompanion data) {
+    return ReminderSchema(
       id: data.id.present ? data.id.value : this.id,
       profileId: data.profileId.present ? data.profileId.value : this.profileId,
       type: data.type.present ? data.type.value : this.type,
@@ -1200,7 +1200,7 @@ class Reminder extends DataClass implements Insertable<Reminder> {
 
   @override
   String toString() {
-    return (StringBuffer('Reminder(')
+    return (StringBuffer('ReminderSchema(')
           ..write('id: $id, ')
           ..write('profileId: $profileId, ')
           ..write('type: $type, ')
@@ -1261,7 +1261,7 @@ class Reminder extends DataClass implements Insertable<Reminder> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Reminder &&
+      (other is ReminderSchema &&
           other.id == this.id &&
           other.profileId == this.profileId &&
           other.type == this.type &&
@@ -1289,7 +1289,7 @@ class Reminder extends DataClass implements Insertable<Reminder> {
           other.xpValue == this.xpValue);
 }
 
-class RemindersCompanion extends UpdateCompanion<Reminder> {
+class RemindersCompanion extends UpdateCompanion<ReminderSchema> {
   final Value<String> id;
   final Value<String> profileId;
   final Value<String> type;
@@ -1377,7 +1377,7 @@ class RemindersCompanion extends UpdateCompanion<Reminder> {
         scheduledTime = Value(scheduledTime),
         createdAt = Value(createdAt),
         updatedAt = Value(updatedAt);
-  static Insertable<Reminder> custom({
+  static Insertable<ReminderSchema> custom({
     Expression<String>? id,
     Expression<String>? profileId,
     Expression<String>? type,
@@ -6719,7 +6719,7 @@ typedef $$RemindersTableUpdateCompanionBuilder = RemindersCompanion Function({
 });
 
 final class $$RemindersTableReferences
-    extends BaseReferences<_$AppDatabase, $RemindersTable, Reminder> {
+    extends BaseReferences<_$AppDatabase, $RemindersTable, ReminderSchema> {
   $$RemindersTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static MultiTypedResultKey<$ReminderLogsTable, List<ReminderLog>>
@@ -7061,14 +7061,14 @@ class $$RemindersTableAnnotationComposer
 class $$RemindersTableTableManager extends RootTableManager<
     _$AppDatabase,
     $RemindersTable,
-    Reminder,
+    ReminderSchema,
     $$RemindersTableFilterComposer,
     $$RemindersTableOrderingComposer,
     $$RemindersTableAnnotationComposer,
     $$RemindersTableCreateCompanionBuilder,
     $$RemindersTableUpdateCompanionBuilder,
-    (Reminder, $$RemindersTableReferences),
-    Reminder,
+    (ReminderSchema, $$RemindersTableReferences),
+    ReminderSchema,
     PrefetchHooks Function({bool reminderLogsRefs})> {
   $$RemindersTableTableManager(_$AppDatabase db, $RemindersTable table)
       : super(TableManagerState(
@@ -7206,7 +7206,7 @@ class $$RemindersTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (reminderLogsRefs)
-                    await $_getPrefetchedData<Reminder, $RemindersTable,
+                    await $_getPrefetchedData<ReminderSchema, $RemindersTable,
                             ReminderLog>(
                         currentTable: table,
                         referencedTable: $$RemindersTableReferences
@@ -7228,14 +7228,14 @@ class $$RemindersTableTableManager extends RootTableManager<
 typedef $$RemindersTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
     $RemindersTable,
-    Reminder,
+    ReminderSchema,
     $$RemindersTableFilterComposer,
     $$RemindersTableOrderingComposer,
     $$RemindersTableAnnotationComposer,
     $$RemindersTableCreateCompanionBuilder,
     $$RemindersTableUpdateCompanionBuilder,
-    (Reminder, $$RemindersTableReferences),
-    Reminder,
+    (ReminderSchema, $$RemindersTableReferences),
+    ReminderSchema,
     PrefetchHooks Function({bool reminderLogsRefs})>;
 typedef $$ReminderLogsTableCreateCompanionBuilder = ReminderLogsCompanion
     Function({

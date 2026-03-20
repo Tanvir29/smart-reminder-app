@@ -9,7 +9,10 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   Function(NotificationResponse)? onNotificationTap;
-  Function(String?)? onActionPressed;
+
+  /// Callback for action button presses (Snooze/Done).
+  /// Parameters: action name, reminder ID from payload.
+  Function(String action, String? reminderId)? onActionPressed;
 
   Future<void> init() async {
     const androidSettings = AndroidInitializationSettings(
@@ -39,9 +42,9 @@ class NotificationService {
 
   void _handleNotificationResponse(NotificationResponse response) {
     if (response.actionId == 'snooze') {
-      onActionPressed?.call('snooze');
+      onActionPressed?.call('snooze', response.payload);
     } else if (response.actionId == 'done') {
-      onActionPressed?.call('done');
+      onActionPressed?.call('done', response.payload);
     } else {
       onNotificationTap?.call(response);
     }

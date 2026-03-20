@@ -32,7 +32,7 @@ class AlarmService {
       loopAudio: true,
       vibrate: true,
       volumeSettings: VolumeSettings.fade(
-        volume: 0.8,
+        volume: 1.0,
         fadeDuration: const Duration(seconds: 3),
       ),
       notificationSettings: NotificationSettings(
@@ -54,6 +54,7 @@ class AlarmService {
   }
 
   Future<bool> isAlarmActive(int id) async {
-    return Alarm.hasAlarm();
+    final alarms = await Alarm.getAlarms();
+    return alarms.any((a) => a.id == id);
   }
 }

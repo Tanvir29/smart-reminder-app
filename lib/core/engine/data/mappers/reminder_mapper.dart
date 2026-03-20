@@ -7,6 +7,7 @@ import 'package:smart_reminder_app/core/engine/domain/entities/escalation_policy
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart'
     as entity;
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
+import 'package:uuid/uuid.dart';
 
 /// Maps between Reminder domain entity and ReminderSchema (Drift).
 class ReminderMapper {
@@ -117,7 +118,7 @@ class ReminderMapper {
     String profileId = 'default',
   }) {
     return db.ReminderLogsCompanion(
-      id: Value(DateTime.now().millisecondsSinceEpoch.toString()),
+      id: Value(const Uuid().v4()),
       profileId: Value(profileId),
       reminderId: Value(reminderId),
       eventType: Value(eventType),

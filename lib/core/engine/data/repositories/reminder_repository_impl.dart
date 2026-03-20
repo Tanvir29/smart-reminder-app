@@ -17,7 +17,7 @@ class ReminderRepositoryImpl implements ReminderRepository {
   @override
   Future<void> save(Reminder reminder) async {
     final schema = _mapper.toSchema(reminder);
-    await _dao.insertReminder(schema);
+    await _dao.upsertReminder(schema);
   }
 
   @override

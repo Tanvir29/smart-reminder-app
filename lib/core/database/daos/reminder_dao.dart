@@ -36,6 +36,9 @@ class ReminderDao extends DatabaseAccessor<AppDatabase>
   Future<void> insertReminder(RemindersCompanion reminder) =>
       db.into(reminders).insert(reminder);
 
+  Future<void> upsertReminder(RemindersCompanion reminder) =>
+      db.into(reminders).insertOnConflictUpdate(reminder);
+
   Future<void> updateReminder(ReminderSchema reminder) =>
       db.update(reminders).replace(reminder);
 

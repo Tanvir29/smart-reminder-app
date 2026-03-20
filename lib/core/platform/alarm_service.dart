@@ -28,7 +28,7 @@ class AlarmService {
     final alarmSettings = AlarmSettings(
       id: id,
       dateTime: dateTime,
-      assetAudioPath: 'assets/alarms/default.mp3',
+      assetAudioPath: 'assets/alarms/file_example_MP3_1MG.mp3',
       loopAudio: true,
       vibrate: true,
       volumeSettings: VolumeSettings.fade(

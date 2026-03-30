@@ -1,16 +1,30 @@
 /// Dose record domain entity.
-///
-/// MiniMax fills in: fields (id, medicationId, scheduledTime, actualTime,
-/// status, reminderId, notes), DoseStatus enum.
 library;
 
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'dose.freezed.dart';
+
 /// Status of a single dose event.
-enum DoseStatus { taken, missed, skipped }
+enum DoseStatus { pending, taken, missed, skipped }
 
-/// Records a single medication dose event.
-class DoseRecord {
-  // TODO: MiniMax — define all fields per spec §8.1.1
-  // Must include: profile_id, created_at, updated_at, sync_status, xp_value
+/// Records a single medication dose event. All timestamps are Unix milliseconds.
+@freezed
+class DoseRecord with _$DoseRecord {
+  const factory DoseRecord({
+    required String id,
+    required String profileId,
+    required String medicationId,
+    required int scheduledTime,
+    int? actualTime,
+    required DoseStatus status,
+    String? reminderId,
+    String? notes,
+    required int createdAt,
+    required int updatedAt,
+    @Default('local') String syncStatus,
+    @Default(10) int xpValue,
+  }) = _DoseRecord;
 
-  const DoseRecord();
+  const DoseRecord._();
 }

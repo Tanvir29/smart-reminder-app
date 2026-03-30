@@ -129,29 +129,33 @@ void main() {
 
       await scheduleReminder.call(reminder);
 
+      // Lazy notification: generic placeholder at schedule-time,
+      // HandleAlarmFired builds dynamic content at fire-time
       verify(
         () => mockAlarmService.setAlarm(
           id: reminder.id.hashCode,
           dateTime: DateTime.fromMillisecondsSinceEpoch(scheduledTime),
-          notificationTitle: 'Take Medicine',
-          notificationBody: 'Time to take your vitamins',
+          notificationTitle: 'Medication Reminder',
+          notificationBody: 'Preparing your reminder...',
         ),
       ).called(1);
     });
 
-    test('passes empty string for notificationBody when body is null',
+    test('passes generic placeholder for notificationBody (lazy construction)',
         () async {
       final reminder = createTestReminder(body: null);
       stubScheduleSuccess();
 
       await scheduleReminder.call(reminder);
 
+      // Lazy notification: generic placeholder at schedule-time,
+      // HandleAlarmFired builds dynamic content at fire-time
       verify(
         () => mockAlarmService.setAlarm(
           id: any(named: 'id'),
           dateTime: any(named: 'dateTime'),
-          notificationTitle: 'Take Medicine',
-          notificationBody: '',
+          notificationTitle: 'Medication Reminder',
+          notificationBody: 'Preparing your reminder...',
         ),
       ).called(1);
     });

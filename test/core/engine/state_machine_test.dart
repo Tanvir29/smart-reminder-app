@@ -228,13 +228,14 @@ void main() {
 
       await handleSnooze.call('test-reminder-1');
 
-      // Verify setAlarm was called (only called for snoozed, not escalating)
+      // Lazy notification: generic placeholder at schedule-time,
+      // HandleAlarmFired builds dynamic content at fire-time
       verify(
         () => mockAlarmService.setAlarm(
           id: any(named: 'id'),
           dateTime: any(named: 'dateTime'),
-          notificationTitle: 'Take Medicine',
-          notificationBody: 'Time to take your vitamins',
+          notificationTitle: 'Medication Reminder',
+          notificationBody: 'Preparing your reminder...',
         ),
       ).called(1);
     });

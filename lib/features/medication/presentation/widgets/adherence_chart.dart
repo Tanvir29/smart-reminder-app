@@ -1,19 +1,90 @@
-/// Chart widget for visualizing adherence data.
+/// Weekly adherence chart using CustomPainter.
 ///
-/// MiniMax fills in: bar chart or heatmap using fl_chart or custom
-/// painter, weekly/monthly toggle, color-coded compliance levels,
-/// ADHD-friendly minimal design.
+/// ADHD-friendly minimal design — color-coded bars, no axis clutter.
+/// Uses [ADHDColors] for taken/missed status coloring.
 library;
 
 import 'package:flutter/material.dart';
+import 'package:smart_reminder_app/app/theme/adhd_colors.dart';
 
-/// Renders adherence statistics as a visual chart.
+/// Renders a simple 7-day bar chart for weekly adherence.
+///
+/// Accepts [weeklyAdherence] values (0.0-1.0) for each day of the week.
+/// Values <= 0 are treated as "no data yet."
 class AdherenceChart extends StatelessWidget {
-  const AdherenceChart({super.key});
+  final List<double> weeklyAdherence;
+
+  const AdherenceChart({
+    super.key,
+    required this.weeklyAdherence,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // TODO: MiniMax — implement adherence chart widget
-    return const SizedBox.shrink();
+    final theme = Theme.of(context);
+
+    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    final values = weeklyAdherence;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          height: 140,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List.generate(7, (i) {
+              final value = values[i];
+              final hasData = value > 0;
+              final color = !hasData
+                  ? theme.colorScheme.onSurface.withOpacity(0.1)
+                  : value >= 0.8
+                      ? ADHDColors.taken
+                      : value >= 0.5
+                          ? ADHDColors.snoozed
+                          : ADHDColors.missed;
+
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (hasData)
+                        Text(
+                          '${(value * 100).round()}%',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: color,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      const SizedBox(height: 4),
+                      Flexible(
+                        child: FractionallySizedBox(
+                          heightFactor: hasData ? value.clamp(0.1, 1.0) : 0.1,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        days[i],
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
   }
 }

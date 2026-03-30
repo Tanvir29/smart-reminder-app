@@ -40,8 +40,8 @@ void main() {
       expect(result.first.read<int>('val'), equals(1));
     });
 
-    test('DB schema version is 1', () {
-      expect(db.schemaVersion, equals(1));
+    test('DB schema version is 2', () {
+      expect(db.schemaVersion, equals(2));
     });
 
     test('All DAOs are initialized', () {

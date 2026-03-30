@@ -113,18 +113,21 @@ void main() {
       expect(result.status, equals(ReminderStatus.escalating));
     });
 
-    test('fires Level 2 loud alarm with URGENT prefix', () async {
+    test('fires Level 2 loud alarm (HandleAlarmFired adds URGENT prefix)',
+        () async {
       final reminder = createTestReminder(escalationCount: 0);
       stubEscalateSuccess(reminder);
 
       await escalateReminder.call('test-reminder-1');
 
+      // Lazy notification: generic placeholder at schedule-time,
+      // HandleAlarmFired adds "URGENT:" prefix at fire-time
       verify(
         () => mockAlarmService.setAlarm(
           id: reminder.id.hashCode,
           dateTime: any(named: 'dateTime'),
-          notificationTitle: 'URGENT: Take Medicine',
-          notificationBody: 'Time to take your vitamins',
+          notificationTitle: 'Medication Reminder',
+          notificationBody: 'Preparing your reminder...',
         ),
       ).called(1);
     });
@@ -246,7 +249,9 @@ void main() {
       expect(captured.escalationCount, equals(1));
     });
 
-    test('uses null body fallback for alarm notificationBody', () async {
+    test(
+        'uses generic placeholder for alarm notificationBody (lazy construction)',
+        () async {
       final now = DateTime.now().millisecondsSinceEpoch;
       final reminder = Reminder(
         id: 'test-null-body',
@@ -266,12 +271,13 @@ void main() {
 
       await escalateReminder.call('test-null-body');
 
+      // Lazy notification: generic placeholder at schedule-time
       verify(
         () => mockAlarmService.setAlarm(
           id: any(named: 'id'),
           dateTime: any(named: 'dateTime'),
-          notificationTitle: 'URGENT: Take Medicine',
-          notificationBody: 'Reminder requires attention!',
+          notificationTitle: 'Medication Reminder',
+          notificationBody: 'Preparing your reminder...',
         ),
       ).called(1);
     });

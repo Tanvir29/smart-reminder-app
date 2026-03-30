@@ -1,11 +1,24 @@
 import 'package:alarm/alarm.dart';
 
+class VoicePayload {
+  final String slotName;
+  final List<String> itemNames;
+  final List<String?> customMessages;
+
+  VoicePayload({
+    required this.slotName,
+    List<String>? itemNames,
+    List<String?>? customMessages,
+  })  : itemNames = itemNames ?? [],
+        customMessages = customMessages ?? [];
+}
+
 class AlarmService {
   static final AlarmService _instance = AlarmService._internal();
   factory AlarmService() => _instance;
   AlarmService._internal();
 
-  Function(int)? onAlarmRing;
+  Function(int, DateTime)? onAlarmRing;
 
   Future<void> init() async {
     await Alarm.init();
@@ -13,10 +26,14 @@ class AlarmService {
     Alarm.ringing.listen((alarmSet) {
       for (final alarm in alarmSet.alarms) {
         if (onAlarmRing != null) {
-          onAlarmRing!(alarm.id);
+          onAlarmRing!(alarm.id, alarm.dateTime);
         }
       }
     });
+  }
+
+  int _generateGroupedAlarmId(DateTime dateTime) {
+    return dateTime.millisecondsSinceEpoch ~/ 60000;
   }
 
   Future<bool> setAlarm({
@@ -24,9 +41,18 @@ class AlarmService {
     required DateTime dateTime,
     required String notificationTitle,
     required String notificationBody,
+    VoicePayload? voicePayload,
   }) async {
+    final alarmId =
+        voicePayload != null ? _generateGroupedAlarmId(dateTime) : id;
+
+    final existingAlarms = await Alarm.getAlarms();
+    if (existingAlarms.any((a) => a.id == alarmId)) {
+      return true;
+    }
+
     final alarmSettings = AlarmSettings(
-      id: id,
+      id: alarmId,
       dateTime: dateTime,
       assetAudioPath: 'assets/alarms/file_example_MP3_1MG.mp3',
       loopAudio: true,
@@ -56,5 +82,12 @@ class AlarmService {
   Future<bool> isAlarmActive(int id) async {
     final alarms = await Alarm.getAlarms();
     return alarms.any((a) => a.id == id);
+  }
+
+  Future<void> stopAllAlarms() async {
+    final alarms = await Alarm.getAlarms();
+    for (final alarm in alarms) {
+      await Alarm.stop(alarm.id);
+    }
   }
 }

@@ -11,17 +11,23 @@ void main() async {
 
   try {
     await container.read(databaseProvider.future);
-    
+
     final alarmService = container.read(alarmServiceProvider);
     final notificationService = container.read(notificationServiceProvider);
 
     await alarmService.init();
     await notificationService.init();
-    
+
+    // Wire HandleAlarmFired to alarm callback for lazy notification/voice construction
+    final handleAlarmFired = container.read(handleAlarmFiredProvider);
+    alarmService.onAlarmRing = (int alarmId, DateTime alarmDateTime) {
+      handleAlarmFired.call(alarmId, alarmDateTime);
+    };
+
     // --- START OF TEST INJECTION ---
     await _runHardwareReliabilitySetup(alarmService);
     // --- END OF TEST INJECTION ---
-    
+
     print('✅ Infrastructure Initialized & Test Alarm Scheduled');
   } catch (e) {
     print('❌ Initialization Failed: $e');
@@ -47,13 +53,13 @@ Future<void> _runHardwareReliabilitySetup(dynamic alarmService) async {
   // 2. Schedule an alarm for 5 minutes from now.
   // This gives you time to unplug and run ADB commands or Reboot.
   final testTime = DateTime.now().add(const Duration(minutes: 5));
-  
+
   await alarmService.setAlarm(
     id: 888,
     dateTime: testTime,
     notificationTitle: "🚨 RELIABILITY TEST",
     notificationBody: "If you hear this, your engine passed the test.",
   );
-  
+
   print('🚀 TEST ALARM SET FOR: $testTime');
 }

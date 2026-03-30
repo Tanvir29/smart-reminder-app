@@ -41,7 +41,11 @@ class NotificationService {
   }
 
   void _handleNotificationResponse(NotificationResponse response) {
-    if (response.actionId == 'snooze') {
+    if (response.actionId == 'snooze_all') {
+      onActionPressed?.call('snooze_all', response.payload);
+    } else if (response.actionId == 'view_take') {
+      onActionPressed?.call('view_take', response.payload);
+    } else if (response.actionId == 'snooze') {
       onActionPressed?.call('snooze', response.payload);
     } else if (response.actionId == 'done') {
       onActionPressed?.call('done', response.payload);
@@ -55,17 +59,19 @@ class NotificationService {
     required String title,
     required String body,
     String? payload,
+    bool isCritical = false,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'medication_reminders',
       'Medication Reminders',
       channelDescription:
-          'Notifications for medication reminders with Snooze/Done actions',
+          'Notifications for medication reminders with Snooze All/View Take actions',
       importance: Importance.high,
       priority: Priority.high,
-      actions: [
-        AndroidNotificationAction('snooze', 'Snooze'),
-        AndroidNotificationAction('done', 'Done'),
+      fullScreenIntent: isCritical,
+      actions: const [
+        AndroidNotificationAction('snooze_all', 'Snooze All'),
+        AndroidNotificationAction('view_take', 'View/Take'),
       ],
     );
 
@@ -75,7 +81,7 @@ class NotificationService {
       presentSound: true,
     );
 
-    const notificationDetails = NotificationDetails(
+    final notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -109,7 +115,7 @@ class NotificationService {
       presentSound: true,
     );
 
-    const notificationDetails = NotificationDetails(
+    final notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );

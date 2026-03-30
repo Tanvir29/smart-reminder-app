@@ -33,6 +33,11 @@ class ReminderDao extends DatabaseAccessor<AppDatabase>
             ))
           .get();
 
+  Future<List<ReminderSchema>> getRemindersByScheduledTime(int scheduledTime) =>
+      (db.select(reminders)
+            ..where((r) => r.scheduledTime.equals(scheduledTime)))
+          .get();
+
   Future<void> insertReminder(RemindersCompanion reminder) =>
       db.into(reminders).insert(reminder);
 

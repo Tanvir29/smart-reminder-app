@@ -20,7 +20,8 @@ class MedicationDao extends DatabaseAccessor<AppDatabase>
   Future<List<Medication>> getMedicationsByProfile(String profileId) =>
       (db.select(
         medications,
-      )..where((m) => m.profileId.equals(profileId))).get();
+      )..where((m) => m.profileId.equals(profileId)))
+          .get();
 
   Future<void> insertMedication(MedicationsCompanion medication) =>
       db.into(medications).insert(medication);
@@ -31,9 +32,7 @@ class MedicationDao extends DatabaseAccessor<AppDatabase>
   Future<void> archiveMedication(String id) async {
     final medication = await getMedicationById(id);
     if (medication != null) {
-      await db
-          .update(medications)
-          .replace(
+      await db.update(medications).replace(
             medication.copyWith(
               isActive: false,
               archivedAt: Value(DateTime.now().millisecondsSinceEpoch),
@@ -79,4 +78,10 @@ class MedicationDao extends DatabaseAccessor<AppDatabase>
           .get();
 
   Future<List<DoseRecord>> getAllDoseRecords() => db.select(doseRecords).get();
+
+  Future<List<DoseRecord>> getDoseRecordsByReminder(String reminderId) =>
+      (db.select(doseRecords)
+            ..where((d) => d.reminderId.equals(reminderId))
+            ..orderBy([(d) => OrderingTerm.desc(d.scheduledTime)]))
+          .get();
 }

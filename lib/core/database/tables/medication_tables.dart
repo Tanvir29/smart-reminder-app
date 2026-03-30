@@ -7,6 +7,9 @@ class Medications extends Table {
   TextColumn get dosage => text()();
   TextColumn get frequency => text()();
   TextColumn get instructions => text().nullable()();
+  TextColumn get reminderMessage => text().nullable()();
+  TextColumn get reminderDuration =>
+      text()(); // JSON: {"type":"fixedDays","days":7} | {"type":"oneMonth"} | {"type":"continuous"} | {"type":"custom","days/months" : "user input"}
   BoolColumn get isCritical => boolean().withDefault(const Constant(false))();
   TextColumn get iconName => text().withDefault(const Constant('pill'))();
   TextColumn get colorHex => text().withDefault(const Constant('#4CAF50'))();

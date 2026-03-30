@@ -14,8 +14,7 @@ class Reminders extends Table {
   IntColumn get escalationCount => integer().withDefault(const Constant(0))();
   TextColumn get confirmationMode =>
       text().withDefault(const Constant('swipeToConfirm'))();
-  TextColumn get linkedEntityId => text().nullable()();
-  TextColumn get linkedEntityType => text().nullable()();
+  IntColumn get groupDoseCount => integer().withDefault(const Constant(1))();
 
   IntColumn get maxSnoozes => integer().withDefault(const Constant(3))();
   IntColumn get snoozeBaseDelayMinutes =>

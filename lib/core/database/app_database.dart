@@ -49,12 +49,18 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(QueryExecutor e) : super(e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from == 1 && to == 2) {
+            await m.addColumn(reminders, reminders.groupDoseCount);
+            await m.addColumn(medications, medications.reminderMessage);
+          }
         },
       );
 

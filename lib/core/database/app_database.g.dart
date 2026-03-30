@@ -515,18 +515,14 @@ class $RemindersTable extends Reminders
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('swipeToConfirm'));
-  static const VerificationMeta _linkedEntityIdMeta =
-      const VerificationMeta('linkedEntityId');
+  static const VerificationMeta _groupDoseCountMeta =
+      const VerificationMeta('groupDoseCount');
   @override
-  late final GeneratedColumn<String> linkedEntityId = GeneratedColumn<String>(
-      'linked_entity_id', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _linkedEntityTypeMeta =
-      const VerificationMeta('linkedEntityType');
-  @override
-  late final GeneratedColumn<String> linkedEntityType = GeneratedColumn<String>(
-      'linked_entity_type', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
+  late final GeneratedColumn<int> groupDoseCount = GeneratedColumn<int>(
+      'group_dose_count', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
   static const VerificationMeta _maxSnoozesMeta =
       const VerificationMeta('maxSnoozes');
   @override
@@ -628,8 +624,7 @@ class $RemindersTable extends Reminders
         snoozeCount,
         escalationCount,
         confirmationMode,
-        linkedEntityId,
-        linkedEntityType,
+        groupDoseCount,
         maxSnoozes,
         snoozeBaseDelayMinutes,
         responseWindowSeconds,
@@ -714,17 +709,11 @@ class $RemindersTable extends Reminders
           confirmationMode.isAcceptableOrUnknown(
               data['confirmation_mode']!, _confirmationModeMeta));
     }
-    if (data.containsKey('linked_entity_id')) {
+    if (data.containsKey('group_dose_count')) {
       context.handle(
-          _linkedEntityIdMeta,
-          linkedEntityId.isAcceptableOrUnknown(
-              data['linked_entity_id']!, _linkedEntityIdMeta));
-    }
-    if (data.containsKey('linked_entity_type')) {
-      context.handle(
-          _linkedEntityTypeMeta,
-          linkedEntityType.isAcceptableOrUnknown(
-              data['linked_entity_type']!, _linkedEntityTypeMeta));
+          _groupDoseCountMeta,
+          groupDoseCount.isAcceptableOrUnknown(
+              data['group_dose_count']!, _groupDoseCountMeta));
     }
     if (data.containsKey('max_snoozes')) {
       context.handle(
@@ -829,10 +818,8 @@ class $RemindersTable extends Reminders
           .read(DriftSqlType.int, data['${effectivePrefix}escalation_count'])!,
       confirmationMode: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}confirmation_mode'])!,
-      linkedEntityId: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}linked_entity_id']),
-      linkedEntityType: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}linked_entity_type']),
+      groupDoseCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}group_dose_count'])!,
       maxSnoozes: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}max_snoozes'])!,
       snoozeBaseDelayMinutes: attachedDatabase.typeMapping.read(
@@ -881,8 +868,7 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
   final int snoozeCount;
   final int escalationCount;
   final String confirmationMode;
-  final String? linkedEntityId;
-  final String? linkedEntityType;
+  final int groupDoseCount;
   final int maxSnoozes;
   final int snoozeBaseDelayMinutes;
   final int responseWindowSeconds;
@@ -907,8 +893,7 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
       required this.snoozeCount,
       required this.escalationCount,
       required this.confirmationMode,
-      this.linkedEntityId,
-      this.linkedEntityType,
+      required this.groupDoseCount,
       required this.maxSnoozes,
       required this.snoozeBaseDelayMinutes,
       required this.responseWindowSeconds,
@@ -939,12 +924,7 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
     map['snooze_count'] = Variable<int>(snoozeCount);
     map['escalation_count'] = Variable<int>(escalationCount);
     map['confirmation_mode'] = Variable<String>(confirmationMode);
-    if (!nullToAbsent || linkedEntityId != null) {
-      map['linked_entity_id'] = Variable<String>(linkedEntityId);
-    }
-    if (!nullToAbsent || linkedEntityType != null) {
-      map['linked_entity_type'] = Variable<String>(linkedEntityType);
-    }
+    map['group_dose_count'] = Variable<int>(groupDoseCount);
     map['max_snoozes'] = Variable<int>(maxSnoozes);
     map['snooze_base_delay_minutes'] = Variable<int>(snoozeBaseDelayMinutes);
     map['response_window_seconds'] = Variable<int>(responseWindowSeconds);
@@ -981,12 +961,7 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
       snoozeCount: Value(snoozeCount),
       escalationCount: Value(escalationCount),
       confirmationMode: Value(confirmationMode),
-      linkedEntityId: linkedEntityId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(linkedEntityId),
-      linkedEntityType: linkedEntityType == null && nullToAbsent
-          ? const Value.absent()
-          : Value(linkedEntityType),
+      groupDoseCount: Value(groupDoseCount),
       maxSnoozes: Value(maxSnoozes),
       snoozeBaseDelayMinutes: Value(snoozeBaseDelayMinutes),
       responseWindowSeconds: Value(responseWindowSeconds),
@@ -1021,8 +996,7 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
       snoozeCount: serializer.fromJson<int>(json['snoozeCount']),
       escalationCount: serializer.fromJson<int>(json['escalationCount']),
       confirmationMode: serializer.fromJson<String>(json['confirmationMode']),
-      linkedEntityId: serializer.fromJson<String?>(json['linkedEntityId']),
-      linkedEntityType: serializer.fromJson<String?>(json['linkedEntityType']),
+      groupDoseCount: serializer.fromJson<int>(json['groupDoseCount']),
       maxSnoozes: serializer.fromJson<int>(json['maxSnoozes']),
       snoozeBaseDelayMinutes:
           serializer.fromJson<int>(json['snoozeBaseDelayMinutes']),
@@ -1057,8 +1031,7 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
       'snoozeCount': serializer.toJson<int>(snoozeCount),
       'escalationCount': serializer.toJson<int>(escalationCount),
       'confirmationMode': serializer.toJson<String>(confirmationMode),
-      'linkedEntityId': serializer.toJson<String?>(linkedEntityId),
-      'linkedEntityType': serializer.toJson<String?>(linkedEntityType),
+      'groupDoseCount': serializer.toJson<int>(groupDoseCount),
       'maxSnoozes': serializer.toJson<int>(maxSnoozes),
       'snoozeBaseDelayMinutes': serializer.toJson<int>(snoozeBaseDelayMinutes),
       'responseWindowSeconds': serializer.toJson<int>(responseWindowSeconds),
@@ -1088,8 +1061,7 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
           int? snoozeCount,
           int? escalationCount,
           String? confirmationMode,
-          Value<String?> linkedEntityId = const Value.absent(),
-          Value<String?> linkedEntityType = const Value.absent(),
+          int? groupDoseCount,
           int? maxSnoozes,
           int? snoozeBaseDelayMinutes,
           int? responseWindowSeconds,
@@ -1116,11 +1088,7 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
         snoozeCount: snoozeCount ?? this.snoozeCount,
         escalationCount: escalationCount ?? this.escalationCount,
         confirmationMode: confirmationMode ?? this.confirmationMode,
-        linkedEntityId:
-            linkedEntityId.present ? linkedEntityId.value : this.linkedEntityId,
-        linkedEntityType: linkedEntityType.present
-            ? linkedEntityType.value
-            : this.linkedEntityType,
+        groupDoseCount: groupDoseCount ?? this.groupDoseCount,
         maxSnoozes: maxSnoozes ?? this.maxSnoozes,
         snoozeBaseDelayMinutes:
             snoozeBaseDelayMinutes ?? this.snoozeBaseDelayMinutes,
@@ -1162,12 +1130,9 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
       confirmationMode: data.confirmationMode.present
           ? data.confirmationMode.value
           : this.confirmationMode,
-      linkedEntityId: data.linkedEntityId.present
-          ? data.linkedEntityId.value
-          : this.linkedEntityId,
-      linkedEntityType: data.linkedEntityType.present
-          ? data.linkedEntityType.value
-          : this.linkedEntityType,
+      groupDoseCount: data.groupDoseCount.present
+          ? data.groupDoseCount.value
+          : this.groupDoseCount,
       maxSnoozes:
           data.maxSnoozes.present ? data.maxSnoozes.value : this.maxSnoozes,
       snoozeBaseDelayMinutes: data.snoozeBaseDelayMinutes.present
@@ -1212,8 +1177,7 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
           ..write('snoozeCount: $snoozeCount, ')
           ..write('escalationCount: $escalationCount, ')
           ..write('confirmationMode: $confirmationMode, ')
-          ..write('linkedEntityId: $linkedEntityId, ')
-          ..write('linkedEntityType: $linkedEntityType, ')
+          ..write('groupDoseCount: $groupDoseCount, ')
           ..write('maxSnoozes: $maxSnoozes, ')
           ..write('snoozeBaseDelayMinutes: $snoozeBaseDelayMinutes, ')
           ..write('responseWindowSeconds: $responseWindowSeconds, ')
@@ -1243,8 +1207,7 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
         snoozeCount,
         escalationCount,
         confirmationMode,
-        linkedEntityId,
-        linkedEntityType,
+        groupDoseCount,
         maxSnoozes,
         snoozeBaseDelayMinutes,
         responseWindowSeconds,
@@ -1273,8 +1236,7 @@ class ReminderSchema extends DataClass implements Insertable<ReminderSchema> {
           other.snoozeCount == this.snoozeCount &&
           other.escalationCount == this.escalationCount &&
           other.confirmationMode == this.confirmationMode &&
-          other.linkedEntityId == this.linkedEntityId &&
-          other.linkedEntityType == this.linkedEntityType &&
+          other.groupDoseCount == this.groupDoseCount &&
           other.maxSnoozes == this.maxSnoozes &&
           other.snoozeBaseDelayMinutes == this.snoozeBaseDelayMinutes &&
           other.responseWindowSeconds == this.responseWindowSeconds &&
@@ -1301,8 +1263,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderSchema> {
   final Value<int> snoozeCount;
   final Value<int> escalationCount;
   final Value<String> confirmationMode;
-  final Value<String?> linkedEntityId;
-  final Value<String?> linkedEntityType;
+  final Value<int> groupDoseCount;
   final Value<int> maxSnoozes;
   final Value<int> snoozeBaseDelayMinutes;
   final Value<int> responseWindowSeconds;
@@ -1328,8 +1289,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderSchema> {
     this.snoozeCount = const Value.absent(),
     this.escalationCount = const Value.absent(),
     this.confirmationMode = const Value.absent(),
-    this.linkedEntityId = const Value.absent(),
-    this.linkedEntityType = const Value.absent(),
+    this.groupDoseCount = const Value.absent(),
     this.maxSnoozes = const Value.absent(),
     this.snoozeBaseDelayMinutes = const Value.absent(),
     this.responseWindowSeconds = const Value.absent(),
@@ -1356,8 +1316,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderSchema> {
     this.snoozeCount = const Value.absent(),
     this.escalationCount = const Value.absent(),
     this.confirmationMode = const Value.absent(),
-    this.linkedEntityId = const Value.absent(),
-    this.linkedEntityType = const Value.absent(),
+    this.groupDoseCount = const Value.absent(),
     this.maxSnoozes = const Value.absent(),
     this.snoozeBaseDelayMinutes = const Value.absent(),
     this.responseWindowSeconds = const Value.absent(),
@@ -1389,8 +1348,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderSchema> {
     Expression<int>? snoozeCount,
     Expression<int>? escalationCount,
     Expression<String>? confirmationMode,
-    Expression<String>? linkedEntityId,
-    Expression<String>? linkedEntityType,
+    Expression<int>? groupDoseCount,
     Expression<int>? maxSnoozes,
     Expression<int>? snoozeBaseDelayMinutes,
     Expression<int>? responseWindowSeconds,
@@ -1417,8 +1375,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderSchema> {
       if (snoozeCount != null) 'snooze_count': snoozeCount,
       if (escalationCount != null) 'escalation_count': escalationCount,
       if (confirmationMode != null) 'confirmation_mode': confirmationMode,
-      if (linkedEntityId != null) 'linked_entity_id': linkedEntityId,
-      if (linkedEntityType != null) 'linked_entity_type': linkedEntityType,
+      if (groupDoseCount != null) 'group_dose_count': groupDoseCount,
       if (maxSnoozes != null) 'max_snoozes': maxSnoozes,
       if (snoozeBaseDelayMinutes != null)
         'snooze_base_delay_minutes': snoozeBaseDelayMinutes,
@@ -1451,8 +1408,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderSchema> {
       Value<int>? snoozeCount,
       Value<int>? escalationCount,
       Value<String>? confirmationMode,
-      Value<String?>? linkedEntityId,
-      Value<String?>? linkedEntityType,
+      Value<int>? groupDoseCount,
       Value<int>? maxSnoozes,
       Value<int>? snoozeBaseDelayMinutes,
       Value<int>? responseWindowSeconds,
@@ -1478,8 +1434,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderSchema> {
       snoozeCount: snoozeCount ?? this.snoozeCount,
       escalationCount: escalationCount ?? this.escalationCount,
       confirmationMode: confirmationMode ?? this.confirmationMode,
-      linkedEntityId: linkedEntityId ?? this.linkedEntityId,
-      linkedEntityType: linkedEntityType ?? this.linkedEntityType,
+      groupDoseCount: groupDoseCount ?? this.groupDoseCount,
       maxSnoozes: maxSnoozes ?? this.maxSnoozes,
       snoozeBaseDelayMinutes:
           snoozeBaseDelayMinutes ?? this.snoozeBaseDelayMinutes,
@@ -1536,11 +1491,8 @@ class RemindersCompanion extends UpdateCompanion<ReminderSchema> {
     if (confirmationMode.present) {
       map['confirmation_mode'] = Variable<String>(confirmationMode.value);
     }
-    if (linkedEntityId.present) {
-      map['linked_entity_id'] = Variable<String>(linkedEntityId.value);
-    }
-    if (linkedEntityType.present) {
-      map['linked_entity_type'] = Variable<String>(linkedEntityType.value);
+    if (groupDoseCount.present) {
+      map['group_dose_count'] = Variable<int>(groupDoseCount.value);
     }
     if (maxSnoozes.present) {
       map['max_snoozes'] = Variable<int>(maxSnoozes.value);
@@ -1602,8 +1554,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderSchema> {
           ..write('snoozeCount: $snoozeCount, ')
           ..write('escalationCount: $escalationCount, ')
           ..write('confirmationMode: $confirmationMode, ')
-          ..write('linkedEntityId: $linkedEntityId, ')
-          ..write('linkedEntityType: $linkedEntityType, ')
+          ..write('groupDoseCount: $groupDoseCount, ')
           ..write('maxSnoozes: $maxSnoozes, ')
           ..write('snoozeBaseDelayMinutes: $snoozeBaseDelayMinutes, ')
           ..write('responseWindowSeconds: $responseWindowSeconds, ')
@@ -2142,6 +2093,18 @@ class $MedicationsTable extends Medications
   late final GeneratedColumn<String> instructions = GeneratedColumn<String>(
       'instructions', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _reminderMessageMeta =
+      const VerificationMeta('reminderMessage');
+  @override
+  late final GeneratedColumn<String> reminderMessage = GeneratedColumn<String>(
+      'reminder_message', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _reminderDurationMeta =
+      const VerificationMeta('reminderDuration');
+  @override
+  late final GeneratedColumn<String> reminderDuration = GeneratedColumn<String>(
+      'reminder_duration', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _isCriticalMeta =
       const VerificationMeta('isCritical');
   @override
@@ -2220,6 +2183,8 @@ class $MedicationsTable extends Medications
         dosage,
         frequency,
         instructions,
+        reminderMessage,
+        reminderDuration,
         isCritical,
         iconName,
         colorHex,
@@ -2272,6 +2237,20 @@ class $MedicationsTable extends Medications
           _instructionsMeta,
           instructions.isAcceptableOrUnknown(
               data['instructions']!, _instructionsMeta));
+    }
+    if (data.containsKey('reminder_message')) {
+      context.handle(
+          _reminderMessageMeta,
+          reminderMessage.isAcceptableOrUnknown(
+              data['reminder_message']!, _reminderMessageMeta));
+    }
+    if (data.containsKey('reminder_duration')) {
+      context.handle(
+          _reminderDurationMeta,
+          reminderDuration.isAcceptableOrUnknown(
+              data['reminder_duration']!, _reminderDurationMeta));
+    } else if (isInserting) {
+      context.missing(_reminderDurationMeta);
     }
     if (data.containsKey('is_critical')) {
       context.handle(
@@ -2340,6 +2319,10 @@ class $MedicationsTable extends Medications
           .read(DriftSqlType.string, data['${effectivePrefix}frequency'])!,
       instructions: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}instructions']),
+      reminderMessage: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}reminder_message']),
+      reminderDuration: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}reminder_duration'])!,
       isCritical: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_critical'])!,
       iconName: attachedDatabase.typeMapping
@@ -2374,6 +2357,8 @@ class Medication extends DataClass implements Insertable<Medication> {
   final String dosage;
   final String frequency;
   final String? instructions;
+  final String? reminderMessage;
+  final String reminderDuration;
   final bool isCritical;
   final String iconName;
   final String colorHex;
@@ -2390,6 +2375,8 @@ class Medication extends DataClass implements Insertable<Medication> {
       required this.dosage,
       required this.frequency,
       this.instructions,
+      this.reminderMessage,
+      required this.reminderDuration,
       required this.isCritical,
       required this.iconName,
       required this.colorHex,
@@ -2410,6 +2397,10 @@ class Medication extends DataClass implements Insertable<Medication> {
     if (!nullToAbsent || instructions != null) {
       map['instructions'] = Variable<String>(instructions);
     }
+    if (!nullToAbsent || reminderMessage != null) {
+      map['reminder_message'] = Variable<String>(reminderMessage);
+    }
+    map['reminder_duration'] = Variable<String>(reminderDuration);
     map['is_critical'] = Variable<bool>(isCritical);
     map['icon_name'] = Variable<String>(iconName);
     map['color_hex'] = Variable<String>(colorHex);
@@ -2434,6 +2425,10 @@ class Medication extends DataClass implements Insertable<Medication> {
       instructions: instructions == null && nullToAbsent
           ? const Value.absent()
           : Value(instructions),
+      reminderMessage: reminderMessage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderMessage),
+      reminderDuration: Value(reminderDuration),
       isCritical: Value(isCritical),
       iconName: Value(iconName),
       colorHex: Value(colorHex),
@@ -2458,6 +2453,8 @@ class Medication extends DataClass implements Insertable<Medication> {
       dosage: serializer.fromJson<String>(json['dosage']),
       frequency: serializer.fromJson<String>(json['frequency']),
       instructions: serializer.fromJson<String?>(json['instructions']),
+      reminderMessage: serializer.fromJson<String?>(json['reminderMessage']),
+      reminderDuration: serializer.fromJson<String>(json['reminderDuration']),
       isCritical: serializer.fromJson<bool>(json['isCritical']),
       iconName: serializer.fromJson<String>(json['iconName']),
       colorHex: serializer.fromJson<String>(json['colorHex']),
@@ -2479,6 +2476,8 @@ class Medication extends DataClass implements Insertable<Medication> {
       'dosage': serializer.toJson<String>(dosage),
       'frequency': serializer.toJson<String>(frequency),
       'instructions': serializer.toJson<String?>(instructions),
+      'reminderMessage': serializer.toJson<String?>(reminderMessage),
+      'reminderDuration': serializer.toJson<String>(reminderDuration),
       'isCritical': serializer.toJson<bool>(isCritical),
       'iconName': serializer.toJson<String>(iconName),
       'colorHex': serializer.toJson<String>(colorHex),
@@ -2498,6 +2497,8 @@ class Medication extends DataClass implements Insertable<Medication> {
           String? dosage,
           String? frequency,
           Value<String?> instructions = const Value.absent(),
+          Value<String?> reminderMessage = const Value.absent(),
+          String? reminderDuration,
           bool? isCritical,
           String? iconName,
           String? colorHex,
@@ -2515,6 +2516,10 @@ class Medication extends DataClass implements Insertable<Medication> {
         frequency: frequency ?? this.frequency,
         instructions:
             instructions.present ? instructions.value : this.instructions,
+        reminderMessage: reminderMessage.present
+            ? reminderMessage.value
+            : this.reminderMessage,
+        reminderDuration: reminderDuration ?? this.reminderDuration,
         isCritical: isCritical ?? this.isCritical,
         iconName: iconName ?? this.iconName,
         colorHex: colorHex ?? this.colorHex,
@@ -2535,6 +2540,12 @@ class Medication extends DataClass implements Insertable<Medication> {
       instructions: data.instructions.present
           ? data.instructions.value
           : this.instructions,
+      reminderMessage: data.reminderMessage.present
+          ? data.reminderMessage.value
+          : this.reminderMessage,
+      reminderDuration: data.reminderDuration.present
+          ? data.reminderDuration.value
+          : this.reminderDuration,
       isCritical:
           data.isCritical.present ? data.isCritical.value : this.isCritical,
       iconName: data.iconName.present ? data.iconName.value : this.iconName,
@@ -2559,6 +2570,8 @@ class Medication extends DataClass implements Insertable<Medication> {
           ..write('dosage: $dosage, ')
           ..write('frequency: $frequency, ')
           ..write('instructions: $instructions, ')
+          ..write('reminderMessage: $reminderMessage, ')
+          ..write('reminderDuration: $reminderDuration, ')
           ..write('isCritical: $isCritical, ')
           ..write('iconName: $iconName, ')
           ..write('colorHex: $colorHex, ')
@@ -2580,6 +2593,8 @@ class Medication extends DataClass implements Insertable<Medication> {
       dosage,
       frequency,
       instructions,
+      reminderMessage,
+      reminderDuration,
       isCritical,
       iconName,
       colorHex,
@@ -2599,6 +2614,8 @@ class Medication extends DataClass implements Insertable<Medication> {
           other.dosage == this.dosage &&
           other.frequency == this.frequency &&
           other.instructions == this.instructions &&
+          other.reminderMessage == this.reminderMessage &&
+          other.reminderDuration == this.reminderDuration &&
           other.isCritical == this.isCritical &&
           other.iconName == this.iconName &&
           other.colorHex == this.colorHex &&
@@ -2617,6 +2634,8 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
   final Value<String> dosage;
   final Value<String> frequency;
   final Value<String?> instructions;
+  final Value<String?> reminderMessage;
+  final Value<String> reminderDuration;
   final Value<bool> isCritical;
   final Value<String> iconName;
   final Value<String> colorHex;
@@ -2634,6 +2653,8 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
     this.dosage = const Value.absent(),
     this.frequency = const Value.absent(),
     this.instructions = const Value.absent(),
+    this.reminderMessage = const Value.absent(),
+    this.reminderDuration = const Value.absent(),
     this.isCritical = const Value.absent(),
     this.iconName = const Value.absent(),
     this.colorHex = const Value.absent(),
@@ -2652,6 +2673,8 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
     required String dosage,
     required String frequency,
     this.instructions = const Value.absent(),
+    this.reminderMessage = const Value.absent(),
+    required String reminderDuration,
     this.isCritical = const Value.absent(),
     this.iconName = const Value.absent(),
     this.colorHex = const Value.absent(),
@@ -2666,6 +2689,7 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
         name = Value(name),
         dosage = Value(dosage),
         frequency = Value(frequency),
+        reminderDuration = Value(reminderDuration),
         createdAt = Value(createdAt),
         updatedAt = Value(updatedAt);
   static Insertable<Medication> custom({
@@ -2675,6 +2699,8 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
     Expression<String>? dosage,
     Expression<String>? frequency,
     Expression<String>? instructions,
+    Expression<String>? reminderMessage,
+    Expression<String>? reminderDuration,
     Expression<bool>? isCritical,
     Expression<String>? iconName,
     Expression<String>? colorHex,
@@ -2693,6 +2719,8 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
       if (dosage != null) 'dosage': dosage,
       if (frequency != null) 'frequency': frequency,
       if (instructions != null) 'instructions': instructions,
+      if (reminderMessage != null) 'reminder_message': reminderMessage,
+      if (reminderDuration != null) 'reminder_duration': reminderDuration,
       if (isCritical != null) 'is_critical': isCritical,
       if (iconName != null) 'icon_name': iconName,
       if (colorHex != null) 'color_hex': colorHex,
@@ -2713,6 +2741,8 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
       Value<String>? dosage,
       Value<String>? frequency,
       Value<String?>? instructions,
+      Value<String?>? reminderMessage,
+      Value<String>? reminderDuration,
       Value<bool>? isCritical,
       Value<String>? iconName,
       Value<String>? colorHex,
@@ -2730,6 +2760,8 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
       dosage: dosage ?? this.dosage,
       frequency: frequency ?? this.frequency,
       instructions: instructions ?? this.instructions,
+      reminderMessage: reminderMessage ?? this.reminderMessage,
+      reminderDuration: reminderDuration ?? this.reminderDuration,
       isCritical: isCritical ?? this.isCritical,
       iconName: iconName ?? this.iconName,
       colorHex: colorHex ?? this.colorHex,
@@ -2763,6 +2795,12 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
     }
     if (instructions.present) {
       map['instructions'] = Variable<String>(instructions.value);
+    }
+    if (reminderMessage.present) {
+      map['reminder_message'] = Variable<String>(reminderMessage.value);
+    }
+    if (reminderDuration.present) {
+      map['reminder_duration'] = Variable<String>(reminderDuration.value);
     }
     if (isCritical.present) {
       map['is_critical'] = Variable<bool>(isCritical.value);
@@ -2806,6 +2844,8 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
           ..write('dosage: $dosage, ')
           ..write('frequency: $frequency, ')
           ..write('instructions: $instructions, ')
+          ..write('reminderMessage: $reminderMessage, ')
+          ..write('reminderDuration: $reminderDuration, ')
           ..write('isCritical: $isCritical, ')
           ..write('iconName: $iconName, ')
           ..write('colorHex: $colorHex, ')
@@ -6673,8 +6713,7 @@ typedef $$RemindersTableCreateCompanionBuilder = RemindersCompanion Function({
   Value<int> snoozeCount,
   Value<int> escalationCount,
   Value<String> confirmationMode,
-  Value<String?> linkedEntityId,
-  Value<String?> linkedEntityType,
+  Value<int> groupDoseCount,
   Value<int> maxSnoozes,
   Value<int> snoozeBaseDelayMinutes,
   Value<int> responseWindowSeconds,
@@ -6701,8 +6740,7 @@ typedef $$RemindersTableUpdateCompanionBuilder = RemindersCompanion Function({
   Value<int> snoozeCount,
   Value<int> escalationCount,
   Value<String> confirmationMode,
-  Value<String?> linkedEntityId,
-  Value<String?> linkedEntityType,
+  Value<int> groupDoseCount,
   Value<int> maxSnoozes,
   Value<int> snoozeBaseDelayMinutes,
   Value<int> responseWindowSeconds,
@@ -6783,12 +6821,8 @@ class $$RemindersTableFilterComposer
       column: $table.confirmationMode,
       builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get linkedEntityId => $composableBuilder(
-      column: $table.linkedEntityId,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get linkedEntityType => $composableBuilder(
-      column: $table.linkedEntityType,
+  ColumnFilters<int> get groupDoseCount => $composableBuilder(
+      column: $table.groupDoseCount,
       builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get maxSnoozes => $composableBuilder(
@@ -6901,12 +6935,8 @@ class $$RemindersTableOrderingComposer
       column: $table.confirmationMode,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get linkedEntityId => $composableBuilder(
-      column: $table.linkedEntityId,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get linkedEntityType => $composableBuilder(
-      column: $table.linkedEntityType,
+  ColumnOrderings<int> get groupDoseCount => $composableBuilder(
+      column: $table.groupDoseCount,
       builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get maxSnoozes => $composableBuilder(
@@ -6994,11 +7024,8 @@ class $$RemindersTableAnnotationComposer
   GeneratedColumn<String> get confirmationMode => $composableBuilder(
       column: $table.confirmationMode, builder: (column) => column);
 
-  GeneratedColumn<String> get linkedEntityId => $composableBuilder(
-      column: $table.linkedEntityId, builder: (column) => column);
-
-  GeneratedColumn<String> get linkedEntityType => $composableBuilder(
-      column: $table.linkedEntityType, builder: (column) => column);
+  GeneratedColumn<int> get groupDoseCount => $composableBuilder(
+      column: $table.groupDoseCount, builder: (column) => column);
 
   GeneratedColumn<int> get maxSnoozes => $composableBuilder(
       column: $table.maxSnoozes, builder: (column) => column);
@@ -7092,8 +7119,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             Value<int> snoozeCount = const Value.absent(),
             Value<int> escalationCount = const Value.absent(),
             Value<String> confirmationMode = const Value.absent(),
-            Value<String?> linkedEntityId = const Value.absent(),
-            Value<String?> linkedEntityType = const Value.absent(),
+            Value<int> groupDoseCount = const Value.absent(),
             Value<int> maxSnoozes = const Value.absent(),
             Value<int> snoozeBaseDelayMinutes = const Value.absent(),
             Value<int> responseWindowSeconds = const Value.absent(),
@@ -7120,8 +7146,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             snoozeCount: snoozeCount,
             escalationCount: escalationCount,
             confirmationMode: confirmationMode,
-            linkedEntityId: linkedEntityId,
-            linkedEntityType: linkedEntityType,
+            groupDoseCount: groupDoseCount,
             maxSnoozes: maxSnoozes,
             snoozeBaseDelayMinutes: snoozeBaseDelayMinutes,
             responseWindowSeconds: responseWindowSeconds,
@@ -7148,8 +7173,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             Value<int> snoozeCount = const Value.absent(),
             Value<int> escalationCount = const Value.absent(),
             Value<String> confirmationMode = const Value.absent(),
-            Value<String?> linkedEntityId = const Value.absent(),
-            Value<String?> linkedEntityType = const Value.absent(),
+            Value<int> groupDoseCount = const Value.absent(),
             Value<int> maxSnoozes = const Value.absent(),
             Value<int> snoozeBaseDelayMinutes = const Value.absent(),
             Value<int> responseWindowSeconds = const Value.absent(),
@@ -7176,8 +7200,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             snoozeCount: snoozeCount,
             escalationCount: escalationCount,
             confirmationMode: confirmationMode,
-            linkedEntityId: linkedEntityId,
-            linkedEntityType: linkedEntityType,
+            groupDoseCount: groupDoseCount,
             maxSnoozes: maxSnoozes,
             snoozeBaseDelayMinutes: snoozeBaseDelayMinutes,
             responseWindowSeconds: responseWindowSeconds,
@@ -7582,6 +7605,8 @@ typedef $$MedicationsTableCreateCompanionBuilder = MedicationsCompanion
   required String dosage,
   required String frequency,
   Value<String?> instructions,
+  Value<String?> reminderMessage,
+  required String reminderDuration,
   Value<bool> isCritical,
   Value<String> iconName,
   Value<String> colorHex,
@@ -7601,6 +7626,8 @@ typedef $$MedicationsTableUpdateCompanionBuilder = MedicationsCompanion
   Value<String> dosage,
   Value<String> frequency,
   Value<String?> instructions,
+  Value<String?> reminderMessage,
+  Value<String> reminderDuration,
   Value<bool> isCritical,
   Value<String> iconName,
   Value<String> colorHex,
@@ -7660,6 +7687,14 @@ class $$MedicationsTableFilterComposer
 
   ColumnFilters<String> get instructions => $composableBuilder(
       column: $table.instructions, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get reminderMessage => $composableBuilder(
+      column: $table.reminderMessage,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get reminderDuration => $composableBuilder(
+      column: $table.reminderDuration,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get isCritical => $composableBuilder(
       column: $table.isCritical, builder: (column) => ColumnFilters(column));
@@ -7738,6 +7773,14 @@ class $$MedicationsTableOrderingComposer
       column: $table.instructions,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get reminderMessage => $composableBuilder(
+      column: $table.reminderMessage,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get reminderDuration => $composableBuilder(
+      column: $table.reminderDuration,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get isCritical => $composableBuilder(
       column: $table.isCritical, builder: (column) => ColumnOrderings(column));
 
@@ -7792,6 +7835,12 @@ class $$MedicationsTableAnnotationComposer
 
   GeneratedColumn<String> get instructions => $composableBuilder(
       column: $table.instructions, builder: (column) => column);
+
+  GeneratedColumn<String> get reminderMessage => $composableBuilder(
+      column: $table.reminderMessage, builder: (column) => column);
+
+  GeneratedColumn<String> get reminderDuration => $composableBuilder(
+      column: $table.reminderDuration, builder: (column) => column);
 
   GeneratedColumn<bool> get isCritical => $composableBuilder(
       column: $table.isCritical, builder: (column) => column);
@@ -7871,6 +7920,8 @@ class $$MedicationsTableTableManager extends RootTableManager<
             Value<String> dosage = const Value.absent(),
             Value<String> frequency = const Value.absent(),
             Value<String?> instructions = const Value.absent(),
+            Value<String?> reminderMessage = const Value.absent(),
+            Value<String> reminderDuration = const Value.absent(),
             Value<bool> isCritical = const Value.absent(),
             Value<String> iconName = const Value.absent(),
             Value<String> colorHex = const Value.absent(),
@@ -7889,6 +7940,8 @@ class $$MedicationsTableTableManager extends RootTableManager<
             dosage: dosage,
             frequency: frequency,
             instructions: instructions,
+            reminderMessage: reminderMessage,
+            reminderDuration: reminderDuration,
             isCritical: isCritical,
             iconName: iconName,
             colorHex: colorHex,
@@ -7907,6 +7960,8 @@ class $$MedicationsTableTableManager extends RootTableManager<
             required String dosage,
             required String frequency,
             Value<String?> instructions = const Value.absent(),
+            Value<String?> reminderMessage = const Value.absent(),
+            required String reminderDuration,
             Value<bool> isCritical = const Value.absent(),
             Value<String> iconName = const Value.absent(),
             Value<String> colorHex = const Value.absent(),
@@ -7925,6 +7980,8 @@ class $$MedicationsTableTableManager extends RootTableManager<
             dosage: dosage,
             frequency: frequency,
             instructions: instructions,
+            reminderMessage: reminderMessage,
+            reminderDuration: reminderDuration,
             isCritical: isCritical,
             iconName: iconName,
             colorHex: colorHex,

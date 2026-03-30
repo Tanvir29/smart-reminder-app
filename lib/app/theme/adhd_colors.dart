@@ -22,6 +22,14 @@ class ADHDColors {
   static const surface = Color(0xFFFFFFFF);
   static const darkBackground = Color(0xFF121212);
 
+  // Dark mode surfaces
+  static const darkSurface = Color(0xFF1E1E1E);
+
   // Accent (dopamine trigger — used sparingly, confetti only)
   static const reward = Color(0xFFFFD600);
+
+  // Gamification accents (§10.2)
+  static const xpBar = Color(0xFF7C4DFF);
+  static const streakActive = Color(0xFFFF6D00);
+  static const achievementGold = Color(0xFFFFAB00);
 }

@@ -8,10 +8,16 @@ import 'package:smart_reminder_app/core/engine/domain/usecases/handle_snooze.dar
 import 'package:smart_reminder_app/core/engine/domain/usecases/confirm_reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/escalate_reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/log_missed_reminder.dart';
+import 'package:smart_reminder_app/core/engine/domain/usecases/handle_alarm_fired.dart';
 import 'package:smart_reminder_app/core/security/data/secure_storage_impl.dart';
 import 'package:smart_reminder_app/core/security/domain/repositories/secure_storage_repository.dart';
 import 'package:smart_reminder_app/core/platform/alarm_service.dart';
 import 'package:smart_reminder_app/core/platform/notification_service.dart';
+import 'package:smart_reminder_app/core/platform/voice_service.dart';
+import 'package:smart_reminder_app/features/medication/domain/repositories/medication_repository.dart';
+import 'package:smart_reminder_app/features/medication/domain/usecases/add_medication.dart';
+import 'package:smart_reminder_app/features/medication/domain/usecases/record_dose.dart';
+import 'package:smart_reminder_app/features/medication/domain/usecases/undo_dose.dart';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Infrastructure providers
@@ -59,6 +65,10 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService();
 });
 
+final voiceServiceProvider = Provider<VoiceService>((ref) {
+  return VoiceService();
+});
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Use case providers (Phase 2C — The Brain)
 // ──────────────────────────────────────────────────────────────────────────────
@@ -94,6 +104,51 @@ final escalateReminderProvider = Provider<EscalateReminder>((ref) {
 final logMissedReminderProvider = Provider<LogMissedReminder>((ref) {
   return LogMissedReminder(
     repository: ref.watch(reminderRepositoryProvider),
+    alarmService: ref.watch(alarmServiceProvider),
+  );
+});
+
+final handleAlarmFiredProvider = Provider<HandleAlarmFired>((ref) {
+  return HandleAlarmFired(
+    reminderRepository: ref.watch(reminderRepositoryProvider),
+    medicationRepository: ref.watch(medicationRepositoryProvider),
+    notificationService: ref.watch(notificationServiceProvider),
+    voiceService: ref.watch(voiceServiceProvider),
+  );
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Medication providers (Phase 3B — Medication Logic)
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// TODO: Replace with real MedicationRepositoryImpl once the data layer is built.
+final medicationRepositoryProvider = Provider<MedicationRepository>((ref) {
+  throw UnimplementedError(
+    'MedicationRepositoryImpl not yet wired — '
+    'provide a concrete implementation before using medication use cases.',
+  );
+});
+
+final addMedicationProvider = Provider<AddMedication>((ref) {
+  return AddMedication(
+    medicationRepository: ref.watch(medicationRepositoryProvider),
+    reminderRepository: ref.watch(reminderRepositoryProvider),
+    alarmService: ref.watch(alarmServiceProvider),
+  );
+});
+
+final recordDoseProvider = Provider<RecordDose>((ref) {
+  return RecordDose(
+    medicationRepository: ref.watch(medicationRepositoryProvider),
+    reminderRepository: ref.watch(reminderRepositoryProvider),
+    alarmService: ref.watch(alarmServiceProvider),
+  );
+});
+
+final undoDoseProvider = Provider<UndoDose>((ref) {
+  return UndoDose(
+    medicationRepository: ref.watch(medicationRepositoryProvider),
+    reminderRepository: ref.watch(reminderRepositoryProvider),
     alarmService: ref.watch(alarmServiceProvider),
   );
 });

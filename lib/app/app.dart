@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:smart_reminder_app/app/theme/app_theme.dart';
 import 'package:smart_reminder_app/features/medication/presentation/pages/medication_list_page.dart';
 import 'package:smart_reminder_app/features/medication/presentation/pages/add_medication_page.dart';
 import 'package:smart_reminder_app/features/medication/presentation/pages/adherence_dashboard_page.dart';
@@ -27,7 +28,7 @@ final goRouter = GoRouter(
       routes: [
         GoRoute(
           path: '/test',
-          builder: (context, state) => const HardwareTestScreen(), 
+          builder: (context, state) => const HardwareTestScreen(),
         ),
         GoRoute(
           path: '/medications',
@@ -143,20 +144,8 @@ class SmartReminderApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Smart Health Reminder',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6750A4),
-          brightness: Brightness.light,
-        ),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6750A4),
-          brightness: Brightness.dark,
-        ),
-      ),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
       routerConfig: goRouter,
       debugShowCheckedModeBanner: false,

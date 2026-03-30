@@ -1,8 +1,8 @@
 # Smart Health Reminder - Technical Specification
 
-> **Version:** 3.0.0
+> **Version:** 3.2.1
 > **Status:** AUTHORITATIVE - This document is the single source of truth.
-> **Last Updated:** 2026-03-08
+> **Last Updated:** 2026-03-29
 > **Target Platform:** Android-first (iOS port planned via interface abstraction)
 
 ---
@@ -63,6 +63,25 @@ Smart Health Reminder is a **fully offline, privacy-first** mobile health assist
 | Roadmap | 4 phases | **5 phases** | Gamification+Cycle split into its own phase |
 | MethodChannels | 2 (`alarm` + `keystore`) | **1** (`alarm` only) | `flutter_secure_storage` handles keystore natively |
 | Tables | 7 tables (raw SQL) | **11 tables** (Drift Dart classes) | Added gamification tables + multi-profile columns |
+
+#### v3.2.1 Changes from v3.2
+
+| Area | v3.2 | v3.2.1 | Rationale |
+|---|---|---|---|
+| Custom Duration | Date picker | **Duration picker** — days/weeks/months | More intuitive UI. Users select "3 months" instead of picking a specific date. |
+
+#### v3.2 Changes from v3.1
+
+| Area | v3.1 | v3.2 | Rationale |
+|---|---|---|---|
+| Reminder Duration | Hardcoded 7-day buffer | **User-selectable duration** — 7 days, 1 month, Until I turn it off, or Custom end date | Allows users to set medication reminders for specific durations. Continuous option for long-term meds. |
+
+#### v3.1 Changes from v3
+
+| Area | v3 | v3.1 | Rationale |
+|---|---|---|---|
+| Notification Construction | Not explicitly defined | **Lazy Loading** — notification body & voice payload built at fire-time, not schedule-time | Ensures medication changes made between schedule-time and fire-time are reflected. User directive: "Go Lazy, not Eager". |
+| Time-Slot Grouping | Implemented | **Explicit contract** — multiple meds at same time share ONE Reminder entry | Prevents alarm fatigue. Single hardware alarm per unique timestamp. |
 
 #### v3 Changes from v2
 
@@ -588,8 +607,10 @@ All tables are defined as Dart classes extending `Table`. Drift generates type-s
 - JSON data stored as `TEXT`
 
 ### 6.4 Database Tables (11 Total — Drift Dart Classes)
-
-#### 6.4.1 `Reminders` Table
+To support grouping, the `Reminders` table is decoupled from specific medications. It now acts as a Time-Slot Index.
+#### 6.4.1 `Reminders` Table (Modified)
+Removed: `linkedEntityId`, `linkedEntityType`.
+Added: `groupDoseCount`.
 
 ```dart
 class Reminders extends Table {
@@ -599,15 +620,14 @@ class Reminders extends Table {
   TextColumn get title => text()();
   TextColumn get body => text().nullable()();
   TextColumn get status => text().withDefault(const Constant('scheduled'))();
-  IntColumn get scheduledTime => integer()();  // Unix ms
+  IntColumn get scheduledTime => integer()();  // Unix ms, The "Master Timestamp" for the group
+  IntColumn get groupDoseCount => integer()(); // Number of medications due at this time
   IntColumn get actualTriggerTime => integer().nullable()();
   IntColumn get snoozeCount => integer().withDefault(const Constant(0))();
   IntColumn get escalationCount => integer().withDefault(const Constant(0))();
   TextColumn get confirmationMode => text().withDefault(const Constant('swipeToConfirm'))();
-  TextColumn get linkedEntityId => text().nullable()();
-  TextColumn get linkedEntityType => text().nullable()();
 
-  // Denormalized escalation policy
+  // Denormalized escalation policy, Escalation policy remains (shared by all meds in this slot)
   IntColumn get maxSnoozes => integer().withDefault(const Constant(3))();
   IntColumn get snoozeBaseDelayMinutes => integer().withDefault(const Constant(5))();
   IntColumn get responseWindowSeconds => integer().withDefault(const Constant(300))();
@@ -647,7 +667,8 @@ class ReminderLogs extends Table {
 }
 ```
 
-#### 6.4.3 `Medications` Table
+#### 6.4.3 `Medications` Table (Modified)
+Added: `reminderMessage`, `reminderDuration`.
 
 ```dart
 class Medications extends Table {
@@ -657,6 +678,8 @@ class Medications extends Table {
   TextColumn get dosage => text()();
   TextColumn get frequency => text()();        // JSON: {"type":"daily","times":["08:00","20:00"]}
   TextColumn get instructions => text().nullable()();
+  TextColumn get reminderMessage => text().nullable()(); // The text to be spoken by TTS
+  TextColumn get reminderDuration => text()(); // JSON: {"type":"fixedDays","days":7} | {"type":"oneMonth"} | {"type":"continuous"} | {"type":"custom","endTime":1234567890}
   BoolColumn get isCritical => boolean().withDefault(const Constant(false))();
   TextColumn get iconName => text().withDefault(const Constant('pill'))();
   TextColumn get colorHex => text().withDefault(const Constant('#4CAF50'))();
@@ -671,6 +694,17 @@ class Medications extends Table {
   Set<Column> get primaryKey => {id};
 }
 ```
+
+##### 6.4.3.1 ReminderDuration Options
+
+| Type | JSON | Description |
+|---|---|---|
+| `fixedDays` | `{"type":"fixedDays","days":7}` | Fixed duration (default: 7 days) |
+| `oneMonth` | `{"type":"oneMonth"}` | Reminders active for 30 days |
+| `continuous` | `{"type":"continuous"}` | Reminders continue until manually turned off |
+| `custom` | `{"type":"custom","endTime":1234567890}` | User selects custom duration (days/weeks/months). Stored as Unix ms endTime calculated from current time + duration |
+
+> **Note:** The `reminderDuration` field determines how many reminders are generated when adding a medication. The AddMedication use case calculates the end time based on this field and generates dose records for each scheduled time within that duration.
 
 #### 6.4.4 `DoseRecords` Table
 
@@ -875,33 +909,62 @@ class AppDatabase extends _$AppDatabase {
 
 ---
 
-## 7. Alarm & Notification Strategy
+## 7. Alarm, Notification & Voice Strategy
 
-### 7.1 Architecture (v3 — Zero Custom Native Code)
+### 7.1 Architecture (v3.1 — Time-Slot Grouping & Voice Support)
 
-v3 eliminates ALL custom Kotlin/Swift code. Two Flutter packages handle everything:
+v3.1 pivots from a 1:1 Medication-to-Alarm model to a **Time-Slot Grouping** model. This prevents "alarm fatigue" and allows for aggregated voice announcements.
 
 | Package | Responsibility |
 |---|---|
-| `alarm` (^5.1.5) | Hardware-level exact alarm scheduling. Handles AlarmManager, WakeLock, boot persistence, foreground service internally. |
-| `flutter_local_notifications` | Notification channels, action buttons (Snooze/Done), full-screen intents, notification shade management. |
+| `alarm` (^5.2.0) | Hardware-level exact alarm scheduling. Manages the system-level siren/audio for a unique timestamp. |
+| `flutter_local_notifications` | Batch notification display. Lists all medications due at the specific time with batch-level action buttons. |
+| `flutter_tts` (^4.2.2) | **Voice Engine:** Verbally announces medication names and custom reminder messages during the alarm trigger phase. |
 
-> **v3 Change:** The custom `AlarmManagerChannel.kt`, `AlarmReceiver.kt`, `BootReceiver.kt`, and `ReminderForegroundService.kt` have ALL been eliminated. The `alarm` package handles these concerns internally with zero MethodChannels. `MainActivity.kt` is a vanilla `FlutterActivity`.
+> **v3.1 Design Pivot:** A "Reminder" entry in the database now represents a **Unique Timestamp**. If multiple medications are scheduled for the same minute, only ONE physical alarm is registered. The notification and voice engine dynamically pull all associated `DoseRecords` for that timestamp.
 
-### 7.2 Alarm Service Contract
+### 7.1.1 Lazy Loading Principle (Go Lazy, Not Eager)
+
+> **CRITICAL DESIGN RULE:** Notification bodies and voice payloads are constructed at **alarm-fire time**, NOT at schedule-time. This ensures medication name changes, dose changes, reminders, or cancellations are reflected in the reminder when it fires.
+
+| Aspect | Eager (WRONG) | Lazy (CORRECT) |
+|--------|---------------|----------------|
+| **Notification Body** | Built when scheduling, stored in `Reminders.body` | Query database at fire-time to build "Time for: [Med A], [Med B]" |
+| **Voice Payload** | Pre-computed TTS text stored at schedule | Query `Medications.reminderMessage` at fire-time |
+| **Medication List** | Stored as JSON in Reminder at schedule | Query `DoseRecords` + `Medications` tables at fire-time |
+
+**Why Lazy Loading Matters:**
+- User changes medication name at 7:55 AM → notification at 8:00 AM reflects the change
+- User deletes a medication scheduled for 8:00 AM → only remaining meds appear
+- User edits custom voice message → the new message is spoken
+
+**Implementation Contract:**
+```dart
+// WRONG: Eager construction at schedule-time
+Future<void> scheduleReminder(Medication med) async {
+  final body = "Time for ${med.name}"; // ❌ Baked in
+  await saveToDb(reminderBody: body);
+}
+
+// CORRECT: Lazy construction at fire-time  
+Future<void> onAlarmFired(int timestamp) async {
+  final doseRecords = await queryDoseRecordsForTimestamp(timestamp);
+  final meds = await queryMedicationsForDoseRecords(doseRecords);
+  final body = "Time for: ${meds.map((m) => m.name).join(", ")}"; // ✅ Built now
+  await showNotification(body: body);
+}
+```
+
+### 7.2 Alarm Service Contract (Grouped)
 
 ```dart
-/// Dart wrapper around the `alarm` Flutter package.
-/// Handles scheduling, cancellation, and rescheduling of exact alarms.
-/// See: https://pub.dev/packages/alarm
+/// Handles hardware-level scheduling for unique time slots.
 class AlarmService {
-  // Stub — MiniMax fills in implementation.
-  //
   // Responsibilities:
-  // - Schedule exact alarms via Alarm.set()
-  // - Cancel alarms via Alarm.stop()
-  // - Reschedule all alarms on boot (Alarm handles this internally)
-  // - Convert reminder entities to AlarmSettings
+  // - Ensure only one hardware alarm exists per unique timestamp.
+  // - Schedule alarms via Alarm.set() using high-priority audio.
+  // - Stop specific alarms when the associated batch is confirmed.
+  // - Implement volume escalation and looping (§5.3).
 }
 ```
 
@@ -909,38 +972,55 @@ class AlarmService {
 
 ```dart
 /// Dart wrapper around `flutter_local_notifications`.
+///Handles grouped notification UI and shade actions.
 /// Handles notification display, channels, and action buttons.
 class NotificationService {
   // Stub — MiniMax fills in implementation.
   //
   // Responsibilities:
   // - Initialize notification channels (medication, cycle, system)
+  // - Build dynamic notification bodies (e.g., "Time for: Prozac, Vitamin D, Iron").
   // - Show notifications with action buttons (Snooze, Done)
   // - Handle notification action callbacks
-  // - Full-screen intent for critical medications
+  // - Force full-screen intent for any batch containing an 'isCritical' medication.
 }
 ```
 
-### 7.4 Notification Channel Definitions
+### 7.4 Voice Service Contract (NEW)
+
+```dart
+/// Text-to-Speech engine for audio reminders.
+class VoiceService {
+  // Responsibilities:
+  // - Initialize TTS engine with clear, moderate-speed ADHD-friendly settings.
+  // - Construct speech: "Attention: It is time for [Slot Name]. Please take [Med A] and [Med B]."
+  // - Speak the 'reminderMessage' (§6.4.3) defined for each medication in the batch.
+  // - Fallback: If TTS fails, the siren alarm continues as a secondary failsafe.
+}
+```
+
+### 7.5 Notification Channel Definitions
 
 | Channel ID | Name | Importance | Usage |
 |---|---|---|---|
-| `medication_reminders` | Medication Reminders | High | Medication dose reminders with Snooze/Done actions |
+| `medication_reminders` | Medication Reminders | High | Grouped dose reminders with action buttons. |
 | `cycle_reminders` | Cycle Reminders | Default | Cycle tracking reminders |
 | `system` | System | Low | Backup completion, streak notifications |
 
-### 7.5 Notification Action Buttons
+### 7.6 Notification Action Buttons
 
 Each medication reminder notification includes two action buttons:
 
 | Action | Button Text | Behavior |
 |---|---|---|
-| Snooze | "Snooze" | Reschedules the alarm per the `EscalationPolicy`. Increments snooze count. |
-| Done | "Done" | Confirms the reminder. Awards XP. Updates streak. |
+| Snooze | "Snooze All" | Reschedules the entire time-slot batch per the `EscalationPolicy`. Increments snooze count. |
+| Done | "View/Take" | Opens the Batch Checklist UI (§10.1). Direct batch confirmation from the notification shade is disabled to ensure user     accountability. |
 
 > **Architectural Note:** The `alarm` package uses `setAlarmClock()` internally — the ONLY AlarmManager API fully exempt from Doze mode, App Standby Buckets, and battery optimization across all Android versions. The coding agent must NEVER use `WorkManager` or `JobScheduler` for time-critical alarms.
 
 > **Architectural Note:** When iOS support is added, both `alarm` and `flutter_local_notifications` already support iOS natively. Zero platform-specific Dart code is needed. See Appendix B.
+
+> **Voice Logic Note:** The voice reminder acts as a cognitive aid. The physical alarm provides the urgency, while the Voice Service provides the "externalized" instruction required for ADHD executive function support.
 
 ---
 
@@ -987,16 +1067,18 @@ class DoseRecord {
 }
 ```
 
-#### 8.1.2 Use Cases
+#### 8.1.2 Use Cases (v3.1 — Time-Slot Aware)
 
 | Use Case | Input | Output | Side Effects |
 |---|---|---|---|
-| `AddMedication` | `Medication` entity | `Medication` with generated ID | Creates scheduled reminders for all daily times via Reminder Engine. |
-| `RecordDose` | `medicationId`, `status`, `timestamp` | `DoseRecord` | Updates linked reminder to `logged` or `missed`. **Awards XP via Gamification Engine.** |
+| `AddMedication` | `Medication` entity | `Medication` with ID | **Time-Slot Upsert:** Searches for existing `Reminder` timestamps. Creates/Updates time-slots for 7 days. Creates linked `DoseRecords`. Updates hardware `AlarmService` with voice payload. |
+| `RecordDose` | `doseRecordId`, `status`, `timestamp` | `DoseRecord` | Updates `DoseRecord`. Evaluates parent `Reminder` status (marks `logged` only if full batch is taken). Stops physical alarm if current batch is cleared. **Awards XP.** |
 | `GetAdherenceStats` | `medicationId`, `DateRange` | `AdherenceReport` | None (read-only). |
-| `GetMedicationSchedule` | `date` | `List<ScheduledDose>` | None (read-only). |
+| `GetMedicationSchedule` | `date` | `List<TimeSlotSchedule>` | Returns medications grouped by shared `scheduledTime` to support the **Batch Checklist UI**. |
 
-> **Architectural Note:** `AddMedication` is the ONLY entry point for creating medication reminders. The coding agent must NOT create reminders from the UI layer directly. The use case creates the medication record AND calls `ScheduleReminder` from the engine.
+> **Architectural Note:** `AddMedication` remains the ONLY entry point for reminder creation. It now implements **Time-Slot logic**: if a user adds a new medication at 08:00 AM and a `Reminder` already exists for that time, the use case links the new `DoseRecord` to the existing `Reminder` rather than creating a duplicate hardware alarm.The coding agent must NOT create reminders from the UI layer directly. The use case creates the medication record AND calls `ScheduleReminder` from the engine.
+
+> **Voice Integration Note:** When `AddMedication` or `HandleSnooze` triggers the `AlarmService`, it must pass the `reminderMessage` (§6.4.3) and medication names as a payload. This ensures the `VoiceService` has the necessary strings to announce at trigger time without performing a database read during the high-urgency alarm firing sequence.
 
 ### 8.2 Menstrual Cycle Module
 
@@ -1147,20 +1229,30 @@ abstract class GamificationRepository {
 
 ### 10.1 Core UX Rules
 
-These rules are non-negotiable and override aesthetic preferences.
+These rules are non-negotiable and override aesthetic preferences. Any UI implementation that violates these is a product failure.
 
 | Rule | Implementation | Why |
 |---|---|---|
 | **Single primary action per screen** | Every page has at most ONE prominent CTA button. | Decision fatigue is the #1 enemy of ADHD task completion. |
 | **Progress, not perfection** | Show streak counters, XP bars, percentage adherence, trend arrows. Never show "failures." | Shame-based feedback causes app abandonment. |
-| **Escalating urgency in notifications** | Stage 1: Gentle chime. Stage 2: Vibration + sound. Stage 3: Full-screen overlay. | Users with ADHD often dismiss initial notifications unconsciously. |
-| **Instant feedback on completion** | 300ms confetti animation + haptic pulse + XP popup when a dose is confirmed. | Dopamine reward reinforces the habit loop. |
+| **Escalating urgency in notifications** | Stage 1: Gentle chime. Stage 2: Vibration + sound. Stage 3: Full-screen overlay + looped audio. | Users with ADHD often dismiss initial notifications unconsciously. |
+| **Instant feedback on completion** | 300ms confetti animation + haptic pulse + XP popup on confirmation. | Dopamine reward reinforces the habit loop. |
 | **Minimal text, maximum icons** | Use iconography and color-coding over text labels where possible. | Reduces cognitive parsing overhead. |
 | **No multi-step forms** | Adding a medication is a single scrollable form, not a wizard. | Multi-step flows have catastrophic abandonment rates for ADHD users. |
 | **Undo over confirm** | "Dose taken" is immediate with a 5-second undo toast, not a "Are you sure?" dialog. | Confirmation dialogs interrupt flow and cause decision paralysis. |
 | **36-hour streak grace** | Streaks use 36-hour windows, not 24-hour. | Shifted schedules shouldn't punish users. See Section 9.3. |
+| **Individual Batch Checkout** | Grouped reminders must show a **Checklist**, not a "Take All" button. | **[NEW]** ADHD users often log all meds as "taken" even if they only swallowed one. Force a per-item check. |
+| **Audio Externalization** | Use Text-to-Speech (TTS) to announce specific medication names. | **[NEW]** Reduces "Time Blindness." Hearing "Take your Prozac" is more effective than a generic beep. |
 
-### 10.2 Color System
+### 10.2 Audio & Voice Interaction
+
+The voice reminder is not a "nice-to-have" feature; it is a cognitive externalization tool.
+
+1.  **Announcement Sequence:** The physical siren/alarm plays first, followed by the Voice Service announcing the specific medication list.
+2.  **Voice Clarity:** TTS must be set to a distinct, clear pitch with no background music to ensure the instruction is isolated from the environment.
+3.  **Dynamic Messaging:** If a medication has a `reminderMessage` (§6.4.3), it must be spoken after the medication name (e.g., "Take Iron. Note: Do not take with coffee").
+
+### 10.3 Color System
 
 ```dart
 /// ADHD-optimized high-contrast palette
@@ -1210,7 +1302,7 @@ class ADHDColors {
 | P1-05 | Implement `AppDatabase` with Drift | P1-04 | 2h |
 | P1-06 | Implement `SecureStorageImpl` (passphrase management) | P1-02 | 1h |
 | P1-07 | Connect Drift to SQLCipher with secure passphrase | P1-05, P1-06 | 2h |
-| P1-08 | Create `AlarmService` + `NotificationService` stubs (platform layer) | P1-01 | 1h |
+| P1-08 | Create `AlarmService` + `NotificationService` + `VoiceService` stubs (platform layer) | P1-01 | 1h |
 | P1-09 | Create backup module stubs (export/import) | P1-02 | 1h |
 | P1-10 | Create Riverpod `ProviderScope` + GoRouter setup | P1-07 | 2h |
 | P1-11 | Run `build_runner` to generate Drift code | P1-05 | 30m |
@@ -1249,29 +1341,37 @@ class ADHDColors {
 - Alarms survive device reboot.
 - All unit tests pass.
 
-### Phase 3: Medication MVP (Single-Profile Pill Reminders)
+### Phase 3: Medication MVP (Grouped Alarms & Voice Logic)
 
-**Goal:** A user can add a medication, receive reminders, confirm doses, and see adherence stats. This is the **Brutal MVP** — the first shippable vertical.
+**Goal:** A user can add medications, receive consolidated alarms for shared time slots, hear a voice reminder, and confirm doses via a batch checklist. This is the Brutal MVP — the first shippable vertical.
 
 | Task ID | Task | Dependencies | Est. Effort |
 |---|---|---|---|
-| P3-01 | Implement `Medication` + `DoseRecord` entities | P1-01 | 1h |
+| P3-01 | Implement `Medication` + `DoseRecord` entities(inc. `reminderMessage`) | P1-01 | 1h |
 | P3-02 | Implement `MedicationRepository` interface | P3-01 | 30m |
 | P3-03 | Implement `MedicationDao` with Drift | P1-05 | 3h |
 | P3-04 | Implement `MedicationRepositoryImpl` | P3-02, P3-03 | 3h |
-| P3-05 | Implement Medication use cases (4 files) | P3-04, P2-08 | 4h |
-| P3-06 | Implement Medication UI (3 pages, 3 widgets) | P3-05 | 8h |
-| P3-07 | Implement Dose Confirmation Sheet | P2-10 | 2h |
-| P3-08 | Implement Home page (today's reminders) | P2-10 | 3h |
-| P3-09 | Write unit tests for Medication use cases | P3-05 | 2h |
-| P3-10 | Write integration test: full dose flow | P3-07 | 3h |
+| P3-05 | Implement Medication use cases(Time-Slot Aware): AddMedication, RecordDose (4 files) | P3-04, P2-08 | 4h |
+| P3-06 | Create and Implement `VoiceService` (TTS implementation) |	P1-08	| 2h
+| P3-07 | Implement Medication UI (3 pages, 3 widgets) | P3-05 | 8h |
+| P3-08 | Implement Batch Dose Confirmation Sheet (Checklist UI) | P2-10, P3-06 | 4h |
+| P3-08 | Implement Home page (today's reminders grouped by timestamp) | P2-10 | 3h |
+| P3-09 | Write unit tests for Medication use cases, Grouping Logic & Partial Completion | P3-05 | 2h |
+| P3-10 | Write integration test: full dose batch flow (Alarms -> Checklist -> Logs) | P3-08 | 3h |
 
 **Phase 3 Exit Criteria:**
-- User can add a medication and have reminders auto-created.
-- User can confirm a dose and see it recorded.
+- User can add multiple medications at the same time and trigger only one physical alarm.
+- The system correctly announces medication names via Text-to-Speech when the alarm fires.
+- The user is forced to check off each medication individually in a checklist before the alarm can be fully silenced (Batch Checkout).
 - Adherence dashboard shows stats for last 7/30 days.
+- Adherence dashboard correctly reflects "Partially Taken" slots if only some items in a batch are checked.
 - Single-profile only (hardcoded `profileId = 'default'`).
 - This is the **Brutal MVP** — shippable at this point.
+
+
+> Architectural Note: Task P3-05 is the core engine update. The logic must shift from "Medication-centric" to "Time-slot centric." AddMedication must look for an existing Reminder for the target scheduledTime and increment the groupDoseCount rather than scheduling a redundant hardware alarm.
+
+> UX Warning: The Batch Confirmation Sheet (P3-08) must strictly follow the ADHD contract. No "Take All" button is permitted. Each checkbox must trigger a haptic pulse to provide discrete dopamine rewards for every pill swallowed.
 
 ### Phase 4: Gamification + Cycle Tracking
 
@@ -1421,9 +1521,10 @@ dependencies:
   # Security (replaces custom Keystore MethodChannel)
   flutter_secure_storage: ^9.2.4
 
-  # Alarms & Notifications (v3 — replaces custom Kotlin AlarmManager)
+  # Alarms & Notifications & flutter tts (v3.1 — replaces custom Kotlin AlarmManager)
   alarm: ^5.1.5
   flutter_local_notifications: ^18.0.1
+  flutter_tts: ^4.2.2. 
 
   # Backup / Export / Import (v3 — data safety)
   share_plus: ^10.1.4

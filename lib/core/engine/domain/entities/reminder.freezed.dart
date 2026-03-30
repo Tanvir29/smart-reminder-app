@@ -27,8 +27,7 @@ mixin _$Reminder {
   int get snoozeCount => throw _privateConstructorUsedError;
   int get escalationCount => throw _privateConstructorUsedError;
   String get confirmationMode => throw _privateConstructorUsedError;
-  String? get linkedEntityId => throw _privateConstructorUsedError;
-  String? get linkedEntityType => throw _privateConstructorUsedError;
+  int get groupDoseCount => throw _privateConstructorUsedError;
   EscalationPolicy get policy => throw _privateConstructorUsedError;
   int get createdAt => throw _privateConstructorUsedError;
   int get updatedAt => throw _privateConstructorUsedError;
@@ -61,8 +60,7 @@ abstract class $ReminderCopyWith<$Res> {
       int snoozeCount,
       int escalationCount,
       String confirmationMode,
-      String? linkedEntityId,
-      String? linkedEntityType,
+      int groupDoseCount,
       EscalationPolicy policy,
       int createdAt,
       int updatedAt,
@@ -100,8 +98,7 @@ class _$ReminderCopyWithImpl<$Res, $Val extends Reminder>
     Object? snoozeCount = null,
     Object? escalationCount = null,
     Object? confirmationMode = null,
-    Object? linkedEntityId = freezed,
-    Object? linkedEntityType = freezed,
+    Object? groupDoseCount = null,
     Object? policy = null,
     Object? createdAt = null,
     Object? updatedAt = null,
@@ -155,14 +152,10 @@ class _$ReminderCopyWithImpl<$Res, $Val extends Reminder>
           ? _value.confirmationMode
           : confirmationMode // ignore: cast_nullable_to_non_nullable
               as String,
-      linkedEntityId: freezed == linkedEntityId
-          ? _value.linkedEntityId
-          : linkedEntityId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      linkedEntityType: freezed == linkedEntityType
-          ? _value.linkedEntityType
-          : linkedEntityType // ignore: cast_nullable_to_non_nullable
-              as String?,
+      groupDoseCount: null == groupDoseCount
+          ? _value.groupDoseCount
+          : groupDoseCount // ignore: cast_nullable_to_non_nullable
+              as int,
       policy: null == policy
           ? _value.policy
           : policy // ignore: cast_nullable_to_non_nullable
@@ -225,8 +218,7 @@ abstract class _$$ReminderImplCopyWith<$Res>
       int snoozeCount,
       int escalationCount,
       String confirmationMode,
-      String? linkedEntityId,
-      String? linkedEntityType,
+      int groupDoseCount,
       EscalationPolicy policy,
       int createdAt,
       int updatedAt,
@@ -263,8 +255,7 @@ class __$$ReminderImplCopyWithImpl<$Res>
     Object? snoozeCount = null,
     Object? escalationCount = null,
     Object? confirmationMode = null,
-    Object? linkedEntityId = freezed,
-    Object? linkedEntityType = freezed,
+    Object? groupDoseCount = null,
     Object? policy = null,
     Object? createdAt = null,
     Object? updatedAt = null,
@@ -318,14 +309,10 @@ class __$$ReminderImplCopyWithImpl<$Res>
           ? _value.confirmationMode
           : confirmationMode // ignore: cast_nullable_to_non_nullable
               as String,
-      linkedEntityId: freezed == linkedEntityId
-          ? _value.linkedEntityId
-          : linkedEntityId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      linkedEntityType: freezed == linkedEntityType
-          ? _value.linkedEntityType
-          : linkedEntityType // ignore: cast_nullable_to_non_nullable
-              as String?,
+      groupDoseCount: null == groupDoseCount
+          ? _value.groupDoseCount
+          : groupDoseCount // ignore: cast_nullable_to_non_nullable
+              as int,
       policy: null == policy
           ? _value.policy
           : policy // ignore: cast_nullable_to_non_nullable
@@ -373,8 +360,7 @@ class _$ReminderImpl extends _Reminder {
       this.snoozeCount = 0,
       this.escalationCount = 0,
       this.confirmationMode = 'swipeToConfirm',
-      this.linkedEntityId,
-      this.linkedEntityType,
+      this.groupDoseCount = 1,
       required this.policy,
       required this.createdAt,
       required this.updatedAt,
@@ -410,9 +396,8 @@ class _$ReminderImpl extends _Reminder {
   @JsonKey()
   final String confirmationMode;
   @override
-  final String? linkedEntityId;
-  @override
-  final String? linkedEntityType;
+  @JsonKey()
+  final int groupDoseCount;
   @override
   final EscalationPolicy policy;
   @override
@@ -432,7 +417,7 @@ class _$ReminderImpl extends _Reminder {
 
   @override
   String toString() {
-    return 'Reminder(id: $id, profileId: $profileId, type: $type, title: $title, body: $body, status: $status, scheduledTime: $scheduledTime, actualTriggerTime: $actualTriggerTime, snoozeCount: $snoozeCount, escalationCount: $escalationCount, confirmationMode: $confirmationMode, linkedEntityId: $linkedEntityId, linkedEntityType: $linkedEntityType, policy: $policy, createdAt: $createdAt, updatedAt: $updatedAt, completedAt: $completedAt, cancellationReason: $cancellationReason, syncStatus: $syncStatus, xpValue: $xpValue)';
+    return 'Reminder(id: $id, profileId: $profileId, type: $type, title: $title, body: $body, status: $status, scheduledTime: $scheduledTime, actualTriggerTime: $actualTriggerTime, snoozeCount: $snoozeCount, escalationCount: $escalationCount, confirmationMode: $confirmationMode, groupDoseCount: $groupDoseCount, policy: $policy, createdAt: $createdAt, updatedAt: $updatedAt, completedAt: $completedAt, cancellationReason: $cancellationReason, syncStatus: $syncStatus, xpValue: $xpValue)';
   }
 
   @override
@@ -457,10 +442,8 @@ class _$ReminderImpl extends _Reminder {
                 other.escalationCount == escalationCount) &&
             (identical(other.confirmationMode, confirmationMode) ||
                 other.confirmationMode == confirmationMode) &&
-            (identical(other.linkedEntityId, linkedEntityId) ||
-                other.linkedEntityId == linkedEntityId) &&
-            (identical(other.linkedEntityType, linkedEntityType) ||
-                other.linkedEntityType == linkedEntityType) &&
+            (identical(other.groupDoseCount, groupDoseCount) ||
+                other.groupDoseCount == groupDoseCount) &&
             (identical(other.policy, policy) || other.policy == policy) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
@@ -489,8 +472,7 @@ class _$ReminderImpl extends _Reminder {
         snoozeCount,
         escalationCount,
         confirmationMode,
-        linkedEntityId,
-        linkedEntityType,
+        groupDoseCount,
         policy,
         createdAt,
         updatedAt,
@@ -522,8 +504,7 @@ abstract class _Reminder extends Reminder {
       final int snoozeCount,
       final int escalationCount,
       final String confirmationMode,
-      final String? linkedEntityId,
-      final String? linkedEntityType,
+      final int groupDoseCount,
       required final EscalationPolicy policy,
       required final int createdAt,
       required final int updatedAt,
@@ -556,9 +537,7 @@ abstract class _Reminder extends Reminder {
   @override
   String get confirmationMode;
   @override
-  String? get linkedEntityId;
-  @override
-  String? get linkedEntityType;
+  int get groupDoseCount;
   @override
   EscalationPolicy get policy;
   @override

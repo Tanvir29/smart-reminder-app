@@ -31,11 +31,13 @@ class ScheduleReminder {
 
     await _repository.save(scheduled);
 
+    // Use generic placeholder — HandleAlarmFired will construct
+    // the dynamic notification body at alarm-fire-time.
     await _alarmService.setAlarm(
       id: scheduled.id.hashCode,
       dateTime: DateTime.fromMillisecondsSinceEpoch(scheduled.scheduledTime),
-      notificationTitle: scheduled.title,
-      notificationBody: scheduled.body ?? '',
+      notificationTitle: 'Medication Reminder',
+      notificationBody: 'Preparing your reminder...',
     );
 
     await _repository.logEvent(

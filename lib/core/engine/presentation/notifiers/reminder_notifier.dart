@@ -31,6 +31,11 @@ class ReminderNotifier extends AsyncNotifier<List<Reminder>> {
     notificationService.onActionPressed = (String action, String? reminderId) {
       if (reminderId == null) return;
       switch (action) {
+        case 'snooze_all':
+          snooze(reminderId);
+        case 'view_take':
+          confirm(reminderId);
+        // Legacy action IDs for backward compatibility
         case 'snooze':
           snooze(reminderId);
         case 'done':

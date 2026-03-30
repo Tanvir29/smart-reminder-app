@@ -76,12 +76,12 @@ class HandleSnooze {
 
     await _repository.save(snoozed);
 
-    // Re-schedule the alarm with new delay
+    // Re-schedule the alarm with new delay — use generic placeholder
     await _alarmService.setAlarm(
       id: snoozed.id.hashCode,
       dateTime: DateTime.fromMillisecondsSinceEpoch(newScheduledTime),
-      notificationTitle: snoozed.title,
-      notificationBody: snoozed.body ?? '',
+      notificationTitle: 'Medication Reminder',
+      notificationBody: 'Preparing your reminder...',
     );
 
     await _repository.logEvent(

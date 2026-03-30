@@ -21,6 +21,9 @@ abstract class ReminderRepository {
   /// Get all reminders scheduled before the given timestamp.
   Future<List<Reminder>> getScheduledBefore(int timestampMillis);
 
+  /// Get reminders at a specific scheduled time (for time-slot grouping).
+  Future<List<Reminder>> getByScheduledTime(int scheduledTime);
+
   /// Update a reminder's status.
   Future<void> updateStatus(String id, ReminderStatus newStatus);
 

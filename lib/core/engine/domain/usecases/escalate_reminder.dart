@@ -64,12 +64,12 @@ class EscalateReminder {
 
     await _repository.save(escalated);
 
-    // Fire Level 2 loud alarm (immediate)
+    // Fire Level 2 loud alarm (immediate) — HandleAlarmFired will add URGENT prefix
     await _alarmService.setAlarm(
       id: escalated.id.hashCode,
       dateTime: DateTime.fromMillisecondsSinceEpoch(now),
-      notificationTitle: 'URGENT: ${escalated.title}',
-      notificationBody: escalated.body ?? 'Reminder requires attention!',
+      notificationTitle: 'Medication Reminder',
+      notificationBody: 'Preparing your reminder...',
     );
 
     await _repository.logEvent(

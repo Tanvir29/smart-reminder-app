@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/notification_port.dart';
 
-class NotificationService {
+class NotificationService implements NotificationPort {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();

@@ -1,4 +1,5 @@
 import 'package:alarm/alarm.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 
 class VoicePayload {
   final String slotName;
@@ -13,7 +14,7 @@ class VoicePayload {
         customMessages = customMessages ?? [];
 }
 
-class AlarmService {
+class AlarmService implements AlarmPort {
   static final AlarmService _instance = AlarmService._internal();
   factory AlarmService() => _instance;
   AlarmService._internal();

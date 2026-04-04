@@ -16,26 +16,26 @@ library;
 
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
-import 'package:smart_reminder_app/core/platform/notification_service.dart';
-import 'package:smart_reminder_app/core/platform/voice_service.dart';
-import 'package:smart_reminder_app/features/medication/domain/repositories/medication_repository.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/notification_port.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/voice_port.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/dose_query_port.dart';
 
 /// Lazily constructs notification body and voice payload when an alarm fires.
 class HandleAlarmFired {
   final ReminderRepository _reminderRepository;
-  final MedicationRepository _medicationRepository;
-  final NotificationService _notificationService;
-  final VoiceService _voiceService;
+  final DoseQueryPort _doseQueryPort;
+  final NotificationPort _notificationPort;
+  final VoicePort _voicePort;
 
   const HandleAlarmFired({
     required ReminderRepository reminderRepository,
-    required MedicationRepository medicationRepository,
-    required NotificationService notificationService,
-    required VoiceService voiceService,
+    required DoseQueryPort doseQueryPort,
+    required NotificationPort notificationPort,
+    required VoicePort voicePort,
   })  : _reminderRepository = reminderRepository,
-        _medicationRepository = medicationRepository,
-        _notificationService = notificationService,
-        _voiceService = voiceService;
+        _doseQueryPort = doseQueryPort,
+        _notificationPort = notificationPort,
+        _voicePort = voicePort;
 
   /// Statuses that should be processed when the alarm fires.
   static const _actionableStatuses = {
@@ -79,19 +79,18 @@ class HandleAlarmFired {
         eventTimestamp: now,
       );
 
-      // 4. Lazily fetch medication data from DoseRecords
-      final doseRecords =
-          await _medicationRepository.getDoseRecordsByReminder(reminder.id);
+      // 4. Lazily fetch medication data from DoseRecords via DoseQueryPort
+      final doseQueryResults =
+          await _doseQueryPort.getDoseRecordsForReminder(reminder.id);
 
       final itemNames = <String>[];
       final customMessages = <String?>[];
 
-      for (final dose in doseRecords) {
-        final medication =
-            await _medicationRepository.getById(dose.medicationId);
-        if (medication != null) {
-          itemNames.add(medication.name);
-          customMessages.add(medication.reminderMessage);
+      for (final doseResult in doseQueryResults) {
+        final medInfo = await _doseQueryPort.getMedicationInfoById(doseResult.medicationId);
+        if (medInfo != null) {
+          itemNames.add(medInfo.name);
+          customMessages.add(medInfo.reminderMessage);
         }
       }
 
@@ -102,7 +101,7 @@ class HandleAlarmFired {
           : 'Time for: ${itemNames.join(', ')}';
 
       // 6. Show notification with Snooze All / View Take action buttons
-      await _notificationService.showMedicationReminder(
+      await _notificationPort.showMedicationReminder(
         id: alarmId,
         title: title,
         body: body,
@@ -113,7 +112,7 @@ class HandleAlarmFired {
       // 7. Speak announcement via TTS (§7.4)
       if (itemNames.isNotEmpty ||
           customMessages.any((m) => m != null && m.isNotEmpty)) {
-        await _voiceService.speakAnnouncement(
+        await _voicePort.speakAnnouncement(
           slotName: reminder.title,
           itemNames: itemNames,
           customMessages: customMessages,

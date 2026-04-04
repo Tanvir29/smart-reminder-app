@@ -21,6 +21,7 @@ class MedicationState with _$MedicationState {
   const factory MedicationState({
     @Default([]) List<Medication> medications,
     @Default([]) List<DoseRecord> todaysDoses,
+    @Default([]) List<DoseRecord> weeklyDoses,
     DoseRecord? lastRecordedDose,
   }) = _MedicationState;
 

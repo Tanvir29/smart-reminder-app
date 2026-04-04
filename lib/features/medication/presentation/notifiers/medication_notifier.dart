@@ -28,26 +28,40 @@ class MedicationNotifier extends AsyncNotifier<MedicationState> {
 
     final medications = await repository.getActive();
 
-    // Load today's dose records for all active medications
+    // Load today's and this week's dose records for all active medications
     final now = DateTime.now();
     final todayStart =
         DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
     final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999)
         .millisecondsSinceEpoch;
+    final weekStart = DateTime(now.year, now.month, now.day)
+        .subtract(const Duration(days: 6))
+        .millisecondsSinceEpoch;
 
-    final allDoses = <DoseRecord>[];
+    final todaysDoses = <DoseRecord>[];
+    final weeklyDoses = <DoseRecord>[];
     for (final med in medications) {
-      final doses = await repository.getDoseRecordsInRange(
+      // Today's doses
+      final todayDoses = await repository.getDoseRecordsInRange(
         med.id,
         todayStart,
         todayEnd,
       );
-      allDoses.addAll(doses);
+      todaysDoses.addAll(todayDoses);
+
+      // Weekly doses for the adherence chart
+      final weekDoses = await repository.getDoseRecordsInRange(
+        med.id,
+        weekStart,
+        todayEnd,
+      );
+      weeklyDoses.addAll(weekDoses);
     }
 
     return MedicationState(
       medications: medications,
-      todaysDoses: allDoses,
+      todaysDoses: todaysDoses,
+      weeklyDoses: weeklyDoses,
     );
   }
 

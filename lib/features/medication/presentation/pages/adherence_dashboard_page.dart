@@ -99,10 +99,10 @@ class AdherenceDashboardPage extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             _StatCard(
-              icon: Icons.cancel,
-              color: ADHDColors.missed,
-              value: '$missed',
-              label: 'Missed',
+              icon: Icons.event_note,
+              color: ADHDColors.neutral,
+              value: '${taken + missed + upcoming}',
+              label: 'Total',
               theme: theme,
             ),
             const SizedBox(width: 8),
@@ -142,7 +142,7 @@ class AdherenceDashboardPage extends ConsumerWidget {
       final dayStartMs = dayStart.millisecondsSinceEpoch;
       final dayEndMs = dayEnd.millisecondsSinceEpoch;
 
-      final dayDoses = state.todaysDoses.where((dose) {
+      final dayDoses = state.weeklyDoses.where((dose) {
         return dose.scheduledTime >= dayStartMs &&
             dose.scheduledTime < dayEndMs;
       }).toList();

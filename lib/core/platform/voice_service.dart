@@ -1,6 +1,7 @@
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/voice_port.dart';
 
-class VoiceService {
+class VoiceService implements VoicePort {
   static final VoiceService _instance = VoiceService._internal();
   factory VoiceService() => _instance;
   VoiceService._internal();

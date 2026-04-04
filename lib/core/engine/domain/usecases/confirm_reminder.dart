@@ -7,18 +7,18 @@ library;
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 
 /// Confirms a reminder and records it as completed.
 class ConfirmReminder {
   final ReminderRepository _repository;
-  final AlarmService _alarmService;
+  final AlarmPort _alarmPort;
 
   const ConfirmReminder({
     required ReminderRepository repository,
-    required AlarmService alarmService,
+    required AlarmPort alarmPort,
   })  : _repository = repository,
-        _alarmService = alarmService;
+        _alarmPort = alarmService;
 
   /// Marks the reminder as [ReminderStatus.logged], stops its alarm,
   /// and logs the confirmation event.
@@ -31,7 +31,7 @@ class ConfirmReminder {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     // Stop any active alarm for this reminder
-    await _alarmService.stopAlarm(reminder.id.hashCode);
+    await _alarmPort.stopAlarm(reminder.id.hashCode);
 
     final logged = reminder.copyWith(
       status: ReminderStatus.logged,

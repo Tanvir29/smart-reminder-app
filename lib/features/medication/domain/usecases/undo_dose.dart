@@ -7,7 +7,7 @@ library;
 
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/features/medication/domain/entities/dose.dart';
 import 'package:smart_reminder_app/features/medication/domain/repositories/medication_repository.dart';
 
@@ -15,7 +15,7 @@ import 'package:smart_reminder_app/features/medication/domain/repositories/medic
 class UndoDose {
   final MedicationRepository _medicationRepository;
   final ReminderRepository _reminderRepository;
-  final AlarmService _alarmService;
+  final AlarmPort _alarmPort;
 
   /// Maximum elapsed time (in milliseconds) after recording a dose during
   /// which the action can still be reversed.
@@ -24,10 +24,10 @@ class UndoDose {
   const UndoDose({
     required MedicationRepository medicationRepository,
     required ReminderRepository reminderRepository,
-    required AlarmService alarmService,
+    required AlarmPort alarmPort,
   })  : _medicationRepository = medicationRepository,
         _reminderRepository = reminderRepository,
-        _alarmService = alarmService;
+        _alarmPort = alarmPort;
 
   /// Reverts [doseRecord] if it was created within [undoWindowMs] of now.
   ///
@@ -62,7 +62,7 @@ class UndoDose {
       );
 
       // 3. Re-arm the alarm so the notification re-appears
-      await _alarmService.setAlarm(
+      await _alarmPort.setAlarm(
         id: doseRecord.reminderId!.hashCode,
         dateTime: DateTime.fromMillisecondsSinceEpoch(doseRecord.scheduledTime),
         notificationTitle: 'Medication Reminder',

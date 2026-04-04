@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:smart_reminder_app/app/theme/adhd_colors.dart';
 import 'package:smart_reminder_app/features/medication/domain/entities/medication.dart';
 import 'package:smart_reminder_app/features/medication/presentation/notifiers/medication_notifier.dart';
+import 'package:uuid/uuid.dart';
 
 /// Single scrollable form to add a new medication.
 class AddMedicationPage extends ConsumerStatefulWidget {
@@ -352,6 +353,15 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
 
   // ── Custom duration helper ─────────────────────────────────────────────
 
+  DateTime _addMonths(DateTime date, int months) {
+    final targetMonth = date.month + months;
+    final targetYear = date.year + (targetMonth - 1) ~/ 12;
+    final normalizedMonth = ((targetMonth - 1) % 12) + 1;
+    final lastDayOfMonth = DateTime(targetYear, normalizedMonth + 1, 0).day;
+    final clampedDay = date.day > lastDayOfMonth ? lastDayOfMonth : date.day;
+    return DateTime(targetYear, normalizedMonth, clampedDay);
+  }
+
   ReminderDuration _buildCustomDuration() {
     final now = DateTime.now();
     DateTime endDate;
@@ -361,7 +371,7 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
         endDate = now.add(Duration(days: _customValue * 7));
         break;
       case 'months':
-        endDate = DateTime(now.year, now.month + _customValue, now.day);
+        endDate = _addMonths(now, _customValue);
         break;
       case 'days':
       default:
@@ -411,7 +421,7 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
 
     final now = DateTime.now().millisecondsSinceEpoch;
     final medication = Medication(
-      id: 'med_$now',
+      id: const Uuid().v4(),
       profileId: 'default',
       name: _nameController.text.trim(),
       dosage: _dosageController.text.trim(),

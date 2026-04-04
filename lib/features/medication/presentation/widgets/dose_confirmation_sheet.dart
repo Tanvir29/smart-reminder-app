@@ -64,8 +64,8 @@ class _DoseConfirmationSheetState extends State<DoseConfirmationSheet> {
     });
     HapticFeedback.vibrate();
 
-    // Let confetti play, then dismiss and fire callback
-    Future.delayed(const Duration(milliseconds: 400), () {
+    // Let confetti play (300ms per spec §10.1), then dismiss and fire callback
+    Future.delayed(const Duration(milliseconds: 300), () {
       widget.onConfirmed();
       if (mounted) Navigator.of(context).pop();
     });

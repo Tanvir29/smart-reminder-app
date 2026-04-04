@@ -6,9 +6,11 @@ import 'package:smart_reminder_app/features/medication/data/mappers/medication_m
 import 'package:smart_reminder_app/features/medication/domain/entities/dose.dart';
 import 'package:smart_reminder_app/features/medication/domain/entities/medication.dart';
 import 'package:smart_reminder_app/features/medication/domain/repositories/medication_repository.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/dose_query_port.dart';
 
-/// Drift-backed medication repository.
-class MedicationRepositoryImpl implements MedicationRepository {
+/// Drift-backed medication repository implementing both MedicationRepository
+/// and DoseQueryPort (for engine->feature decoupling).
+class MedicationRepositoryImpl implements MedicationRepository, DoseQueryPort {
   final MedicationDao _dao;
   final MedicationMapper _mapper;
 
@@ -83,5 +85,27 @@ class MedicationRepositoryImpl implements MedicationRepository {
   Future<List<DoseRecord>> getDoseRecordsByReminder(String reminderId) async {
     final schemas = await _dao.getDoseRecordsByReminder(reminderId);
     return schemas.map(_mapper.toDoseEntity).toList();
+  }
+
+  // ── DoseQueryPort implementation ─────────────────────────────────
+
+  @override
+  Future<List<DoseQueryResult>> getDoseRecordsForReminder(String reminderId) async {
+    final records = await _dao.getDoseRecordsByReminder(reminderId);
+    return records.map((r) => DoseQueryResult(
+      medicationId: r.medicationId,
+      status: r.status,
+    )).toList();
+  }
+
+  @override
+  Future<MedicationInfo?> getMedicationInfoById(String id) async {
+    final med = await _dao.getMedicationById(id);
+    if (med == null) return null;
+    return MedicationInfo(
+      name: med.name,
+      reminderMessage: med.reminderMessage,
+      isCritical: med.isCritical,
+    );
   }
 }

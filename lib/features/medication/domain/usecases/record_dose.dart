@@ -6,7 +6,7 @@ library;
 
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/features/medication/domain/entities/dose.dart';
 import 'package:smart_reminder_app/features/medication/domain/repositories/medication_repository.dart';
 import 'package:uuid/uuid.dart';
@@ -15,17 +15,17 @@ import 'package:uuid/uuid.dart';
 class RecordDose {
   final MedicationRepository _medicationRepository;
   final ReminderRepository _reminderRepository;
-  final AlarmService _alarmService;
+  final AlarmPort _alarmPort;
 
   static const _uuid = Uuid();
 
   const RecordDose({
     required MedicationRepository medicationRepository,
     required ReminderRepository reminderRepository,
-    required AlarmService alarmService,
+    required AlarmPort alarmPort,
   })  : _medicationRepository = medicationRepository,
         _reminderRepository = reminderRepository,
-        _alarmService = alarmService;
+        _alarmPort = alarmPort;
 
   /// Records a dose for [medicationId] linked to [reminderId].
   ///
@@ -81,7 +81,7 @@ class RecordDose {
       );
 
       // Stop the alarm only when the batch is fully resolved
-      await _alarmService.stopAlarm(reminderId.hashCode);
+      await _alarmPort.stopAlarm(reminderId.hashCode);
     }
 
     return doseRecord;

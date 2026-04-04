@@ -1,8 +1,15 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_reminder_app/core/database/app_database.dart';
 import 'package:smart_reminder_app/core/engine/data/mappers/reminder_mapper.dart';
 import 'package:smart_reminder_app/core/engine/data/repositories/reminder_repository_impl.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/notification_port.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/voice_port.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/dose_query_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/handle_snooze.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/confirm_reminder.dart';
@@ -14,6 +21,8 @@ import 'package:smart_reminder_app/core/security/domain/repositories/secure_stor
 import 'package:smart_reminder_app/core/platform/alarm_service.dart';
 import 'package:smart_reminder_app/core/platform/notification_service.dart';
 import 'package:smart_reminder_app/core/platform/voice_service.dart';
+import 'package:smart_reminder_app/features/medication/data/repositories/medication_repository_impl.dart';
+import 'package:smart_reminder_app/features/medication/data/mappers/medication_mapper.dart';
 import 'package:smart_reminder_app/features/medication/domain/repositories/medication_repository.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/add_medication.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/record_dose.dart';
@@ -23,12 +32,18 @@ import 'package:smart_reminder_app/features/medication/domain/usecases/undo_dose
 // Infrastructure providers
 // ──────────────────────────────────────────────────────────────────────────────
 
+import 'dart:convert';
+import 'dart:math';
+
 final databaseProvider = FutureProvider<AppDatabase>((ref) async {
   final storage = ref.read(secureStorageProvider);
   String? passphrase = await storage.read('db_passphrase');
 
   if (passphrase == null || passphrase.isEmpty) {
-    passphrase = DateTime.now().millisecondsSinceEpoch.toString();
+    // Per spec §6.2: use Random.secure() for cryptographic passphrase
+    final random = Random.secure();
+    final bytes = List<int>.generate(32, (_) => random.nextInt(256));
+    passphrase = base64Url.encode(bytes);
     await storage.write('db_passphrase', passphrase);
   }
 
@@ -76,44 +91,44 @@ final voiceServiceProvider = Provider<VoiceService>((ref) {
 final scheduleReminderProvider = Provider<ScheduleReminder>((ref) {
   return ScheduleReminder(
     repository: ref.watch(reminderRepositoryProvider),
-    alarmService: ref.watch(alarmServiceProvider),
+    alarmPort: ref.watch(alarmServiceProvider),
   );
 });
 
 final handleSnoozeProvider = Provider<HandleSnooze>((ref) {
   return HandleSnooze(
     repository: ref.watch(reminderRepositoryProvider),
-    alarmService: ref.watch(alarmServiceProvider),
+    alarmPort: ref.watch(alarmServiceProvider),
   );
 });
 
 final confirmReminderProvider = Provider<ConfirmReminder>((ref) {
   return ConfirmReminder(
     repository: ref.watch(reminderRepositoryProvider),
-    alarmService: ref.watch(alarmServiceProvider),
+    alarmPort: ref.watch(alarmServiceProvider),
   );
 });
 
 final escalateReminderProvider = Provider<EscalateReminder>((ref) {
   return EscalateReminder(
     repository: ref.watch(reminderRepositoryProvider),
-    alarmService: ref.watch(alarmServiceProvider),
+    alarmPort: ref.watch(alarmServiceProvider),
   );
 });
 
 final logMissedReminderProvider = Provider<LogMissedReminder>((ref) {
   return LogMissedReminder(
     repository: ref.watch(reminderRepositoryProvider),
-    alarmService: ref.watch(alarmServiceProvider),
+    alarmPort: ref.watch(alarmServiceProvider),
   );
 });
 
 final handleAlarmFiredProvider = Provider<HandleAlarmFired>((ref) {
   return HandleAlarmFired(
     reminderRepository: ref.watch(reminderRepositoryProvider),
-    medicationRepository: ref.watch(medicationRepositoryProvider),
-    notificationService: ref.watch(notificationServiceProvider),
-    voiceService: ref.watch(voiceServiceProvider),
+    doseQueryPort: ref.watch(medicationRepositoryProvider),
+    notificationPort: ref.watch(notificationServiceProvider),
+    voicePort: ref.watch(voiceServiceProvider),
   );
 });
 
@@ -121,11 +136,15 @@ final handleAlarmFiredProvider = Provider<HandleAlarmFired>((ref) {
 // Medication providers (Phase 3B — Medication Logic)
 // ──────────────────────────────────────────────────────────────────────────────
 
-/// TODO: Replace with real MedicationRepositoryImpl once the data layer is built.
 final medicationRepositoryProvider = Provider<MedicationRepository>((ref) {
-  throw UnimplementedError(
-    'MedicationRepositoryImpl not yet wired — '
-    'provide a concrete implementation before using medication use cases.',
+  final databaseAsync = ref.watch(databaseProvider);
+  return databaseAsync.when(
+    data: (db) => MedicationRepositoryImpl(
+      dao: db.medicationDao,
+      mapper: MedicationMapper(),
+    ),
+    loading: () => throw Exception('Database not initialized'),
+    error: (e, st) => throw Exception('Database error: $e'),
   );
 });
 
@@ -133,7 +152,7 @@ final addMedicationProvider = Provider<AddMedication>((ref) {
   return AddMedication(
     medicationRepository: ref.watch(medicationRepositoryProvider),
     reminderRepository: ref.watch(reminderRepositoryProvider),
-    alarmService: ref.watch(alarmServiceProvider),
+    alarmPort: ref.watch(alarmServiceProvider),
   );
 });
 
@@ -149,6 +168,6 @@ final undoDoseProvider = Provider<UndoDose>((ref) {
   return UndoDose(
     medicationRepository: ref.watch(medicationRepositoryProvider),
     reminderRepository: ref.watch(reminderRepositoryProvider),
-    alarmService: ref.watch(alarmServiceProvider),
+    alarmPort: ref.watch(alarmServiceProvider),
   );
 });

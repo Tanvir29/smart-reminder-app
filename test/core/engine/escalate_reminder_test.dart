@@ -4,45 +4,40 @@ import 'package:smart_reminder_app/core/engine/domain/entities/escalation_policy
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/escalate_reminder.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
-
-// ─── Mocks ───────────────────────────────────────────────────────────────────
 
 class MockReminderRepository extends Mock implements ReminderRepository {}
 
-class MockAlarmService extends Mock implements AlarmService {}
+class MockAlarmPort extends Mock implements AlarmPort {}
 
-// ─── Tests ───────────────────────────────────────────────────────────────────
+class FakeReminder extends Fake implements Reminder {}
 
 void main() {
   late MockReminderRepository mockRepository;
-  late MockAlarmService mockAlarmService;
+  late MockAlarmPort mockAlarmPort;
   late EscalateReminder escalateReminder;
 
   setUpAll(() {
-    registerFallbackValue(
-      Reminder(
-        id: '',
-        profileId: '',
-        type: '',
-        title: '',
-        status: ReminderStatus.scheduled,
-        scheduledTime: 0,
-        policy: const EscalationPolicy(),
-        createdAt: 0,
-        updatedAt: 0,
-      ),
-    );
+    registerFallbackValue(FakeReminder());
     registerFallbackValue(DateTime(2024));
   });
 
   setUp(() {
     mockRepository = MockReminderRepository();
-    mockAlarmService = MockAlarmService();
+    mockAlarmPort = MockAlarmPort();
     escalateReminder = EscalateReminder(
       repository: mockRepository,
-      alarmService: mockAlarmService,
+      alarmPort: mockAlarmPort,
+    );
+  });
+
+  setUp(() {
+    mockRepository = MockReminderRepository();
+    mockAlarmPort = MockAlarmService();
+    escalateReminder = EscalateReminder(
+      repository: mockRepository,
+      alarmService: mockAlarmPort,
     );
   });
 
@@ -73,10 +68,10 @@ void main() {
   void stubEscalateSuccess(Reminder reminder) {
     when(() => mockRepository.getById(reminder.id))
         .thenAnswer((_) async => reminder);
-    when(() => mockAlarmService.stopAlarm(any())).thenAnswer((_) async => true);
+    when(() => mockAlarmPort.stopAlarm(any())).thenAnswer((_) async => true);
     when(() => mockRepository.save(any())).thenAnswer((_) async {});
     when(
-      () => mockAlarmService.setAlarm(
+      () => mockAlarmPort.setAlarm(
         id: any(named: 'id'),
         dateTime: any(named: 'dateTime'),
         notificationTitle: any(named: 'notificationTitle'),
@@ -123,7 +118,7 @@ void main() {
       // Lazy notification: generic placeholder at schedule-time,
       // HandleAlarmFired adds "URGENT:" prefix at fire-time
       verify(
-        () => mockAlarmService.setAlarm(
+        () => mockAlarmPort.setAlarm(
           id: reminder.id.hashCode,
           dateTime: any(named: 'dateTime'),
           notificationTitle: 'Medication Reminder',
@@ -168,7 +163,7 @@ void main() {
 
       await escalateReminder.call('test-reminder-1');
 
-      verify(() => mockAlarmService.stopAlarm(reminder.id.hashCode)).called(1);
+      verify(() => mockAlarmPort.stopAlarm(reminder.id.hashCode)).called(1);
     });
 
     test('does NOT set a new alarm when transitioning to missed', () async {
@@ -179,7 +174,7 @@ void main() {
       await escalateReminder.call('test-reminder-1');
 
       verifyNever(
-        () => mockAlarmService.setAlarm(
+        () => mockAlarmPort.setAlarm(
           id: any(named: 'id'),
           dateTime: any(named: 'dateTime'),
           notificationTitle: any(named: 'notificationTitle'),
@@ -273,7 +268,7 @@ void main() {
 
       // Lazy notification: generic placeholder at schedule-time
       verify(
-        () => mockAlarmService.setAlarm(
+        () => mockAlarmPort.setAlarm(
           id: any(named: 'id'),
           dateTime: any(named: 'dateTime'),
           notificationTitle: 'Medication Reminder',

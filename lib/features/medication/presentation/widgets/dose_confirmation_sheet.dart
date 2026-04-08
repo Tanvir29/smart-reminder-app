@@ -8,8 +8,12 @@
 /// Undo-over-confirm: no "Are you sure?" — immediate action with undo toast.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_reminder_app/app/di/injection.dart';
 import 'package:smart_reminder_app/app/theme/adhd_colors.dart';
 import 'package:smart_reminder_app/features/medication/presentation/notifiers/medication_state.dart';
 import 'package:smart_reminder_app/features/medication/presentation/widgets/confetti_overlay.dart';
@@ -17,19 +21,22 @@ import 'package:smart_reminder_app/features/medication/presentation/widgets/conf
 /// Modal bottom sheet for dose confirmation with haptic + confetti reward.
 class DoseConfirmationSheet extends StatefulWidget {
   final TodayDoseSlot slot;
-  final VoidCallback onConfirmed;
+  final void Function()? onStartConfirmation;
+  final void Function()? onConfirmed;
 
   const DoseConfirmationSheet({
     super.key,
     required this.slot,
-    required this.onConfirmed,
+    this.onStartConfirmation,
+    this.onConfirmed,
   });
 
   /// Shows the sheet as a modal bottom sheet.
   static Future<void> show(
     BuildContext context, {
     required TodayDoseSlot slot,
-    required VoidCallback onConfirmed,
+    void Function()? onStartConfirmation,
+    void Function()? onConfirmed,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -37,6 +44,7 @@ class DoseConfirmationSheet extends StatefulWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => DoseConfirmationSheet(
         slot: slot,
+        onStartConfirmation: onStartConfirmation,
         onConfirmed: onConfirmed,
       ),
     );
@@ -46,9 +54,11 @@ class DoseConfirmationSheet extends StatefulWidget {
   State<DoseConfirmationSheet> createState() => _DoseConfirmationSheetState();
 }
 
-class _DoseConfirmationSheetState extends State<DoseConfirmationSheet> {
+class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
   bool _confirmed = false;
   bool _showConfetti = false;
+  bool _confirmationStarted = false;
+  Timer? _confirmationTimer;
 
   // Tap-3× challenge state
   int _tapCount = 0;
@@ -56,17 +66,77 @@ class _DoseConfirmationSheetState extends State<DoseConfirmationSheet> {
   // Swipe-to-confirm state
   double _swipeProgress = 0.0;
 
-  void _onConfirmed() {
+  @override
+  void dispose() {
+    _confirmationTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _startConfirmation() async {
+    final reminderId = widget.slot.reminderId;
+    if (reminderId == null || reminderId.isEmpty) {
+      _startInteractionProof();
+      return;
+    }
+
+    try {
+      final confirmReminder = ref.read(confirmReminderProvider);
+      await confirmReminder.call(reminderId);
+      _startInteractionProof();
+    } catch (e) {
+      if (widget.slot.reminderId == null || widget.slot.reminderId!.isEmpty) {
+        _startInteractionProof();
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  void _startInteractionProof() {
+    setState(() {
+      _confirmationStarted = true;
+    });
+    _confirmationTimer = Timer(const Duration(seconds: 30), () {
+      if (mounted && !_confirmed) {
+        _onConfirmationTimeout();
+      }
+    });
+    widget.onStartConfirmation?.call();
+  }
+
+  void _onConfirmationTimeout() {
+    _confirmationTimer?.cancel();
+    if (mounted) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Confirmation timed out. Please try again.'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onConfirmed() async {
     if (_confirmed) return;
     setState(() {
       _confirmed = true;
       _showConfetti = true;
     });
     HapticFeedback.vibrate();
+    _confirmationTimer?.cancel();
 
-    // Let confetti play (300ms per spec §10.1), then dismiss and fire callback
+    final reminderId = widget.slot.reminderId;
+    if (reminderId != null && reminderId.isNotEmpty) {
+      try {
+        final finalizeConfirmation = ref.read(finalizeConfirmationProvider);
+        await finalizeConfirmation.call(reminderId);
+      } catch (e) {
+        // Ignore errors - dose recording already happened
+      }
+    }
+
     Future.delayed(const Duration(milliseconds: 300), () {
-      widget.onConfirmed();
+      widget.onConfirmed?.call();
       if (mounted) Navigator.of(context).pop();
     });
   }
@@ -134,9 +204,11 @@ class _DoseConfirmationSheetState extends State<DoseConfirmationSheet> {
                 ),
                 const SizedBox(height: 32),
 
-                // Confirmation mode
+                // Confirmation flow: start button or interaction proof UI
                 if (_confirmed)
                   _buildConfirmedState(theme)
+                else if (!_confirmationStarted)
+                  _buildStartConfirmation(theme)
                 else if (widget.slot.isCritical)
                   _buildTap3xChallenge(theme)
                 else
@@ -157,6 +229,26 @@ class _DoseConfirmationSheetState extends State<DoseConfirmationSheet> {
             ),
           ),
       ],
+    );
+  }
+
+  // ── Start confirmation button ───────────────────────────────────────────
+
+  Widget _buildStartConfirmation(ThemeData theme) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: FilledButton.icon(
+        onPressed: _startConfirmation,
+        style: FilledButton.styleFrom(
+          backgroundColor: ADHDColors.upcoming,
+        ),
+        icon: const Icon(Icons.check_circle_outline, size: 24),
+        label: const Text(
+          'Done',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ),
     );
   }
 

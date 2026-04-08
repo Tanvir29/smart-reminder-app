@@ -86,6 +86,7 @@ class MedicationState with _$MedicationState {
           scheduledTimeMs: scheduledMs,
           status: slotStatus,
           doseRecord: matchingDose,
+          reminderId: matchingDose?.reminderId,
         ));
       }
     }
@@ -132,12 +133,16 @@ class TodayDoseSlot {
   final DoseSlotStatus status;
   final DoseRecord? doseRecord;
 
+  /// Linked reminder ID for the two-phase confirmation flow.
+  final String? reminderId;
+
   const TodayDoseSlot({
     required this.medication,
     required this.scheduledTimeMinutes,
     required this.scheduledTimeMs,
     required this.status,
     this.doseRecord,
+    this.reminderId,
   });
 
   /// Whether this medication requires the tap-3× challenge (§5.5).

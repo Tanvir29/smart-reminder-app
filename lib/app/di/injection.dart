@@ -13,6 +13,7 @@ import 'package:smart_reminder_app/core/engine/domain/ports/dose_query_port.dart
 import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/handle_snooze.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/confirm_reminder.dart';
+import 'package:smart_reminder_app/core/engine/domain/usecases/finalize_confirmation.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/escalate_reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/log_missed_reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/handle_alarm_fired.dart';
@@ -104,6 +105,12 @@ final handleSnoozeProvider = Provider<HandleSnooze>((ref) {
 
 final confirmReminderProvider = Provider<ConfirmReminder>((ref) {
   return ConfirmReminder(
+    repository: ref.watch(reminderRepositoryProvider),
+  );
+});
+
+final finalizeConfirmationProvider = Provider<FinalizeConfirmation>((ref) {
+  return FinalizeConfirmation(
     repository: ref.watch(reminderRepositoryProvider),
     alarmPort: ref.watch(alarmServiceProvider),
   );

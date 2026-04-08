@@ -392,27 +392,348 @@ void main() {
         },
       );
 
+        test(
+          'default reminder duration is 7 days (fixedDays)',
+          () async {
+            final medication = Medication(
+              id: 'med-1',
+              profileId: 'default',
+              name: 'Aspirin',
+              dosage: '100mg',
+              frequency: MedicationFrequency.daily(timesOfDay: const [480]),
+              createdAt: DateTime.now().toUtc().millisecondsSinceEpoch,
+              updatedAt: DateTime.now().toUtc().millisecondsSinceEpoch,
+            );
+            stubAddSuccess();
+
+            await addMedication.call(medication);
+
+            final captured = verify(
+              () => mockReminderRepository.save(captureAny()),
+            ).captured;
+            // Default is 7 days. Due to time filtering, may get 6 or 7 depending on current hour
+            expect(captured.length, greaterThanOrEqualTo(6));
+          },
+        );
+      });
+
+      group('Time-Slot Merging', () {
       test(
-        'default reminder duration is 7 days (fixedDays)',
+        'two medications at same time reuse existing Reminder with incremented groupDoseCount',
         () async {
-          final medication = Medication(
+          final now = DateTime.now().toUtc();
+          final eightAmToday = DateTime.utc(now.year, now.month, now.day, 8, 0);
+          final scheduledTime = eightAmToday.millisecondsSinceEpoch;
+
+          final med1 = createDailyMedication(
             id: 'med-1',
-            profileId: 'default',
-            name: 'Aspirin',
-            dosage: '100mg',
-            frequency: MedicationFrequency.daily(timesOfDay: const [480]),
-            createdAt: DateTime.now().toUtc().millisecondsSinceEpoch,
-            updatedAt: DateTime.now().toUtc().millisecondsSinceEpoch,
+            timesOfDay: const [480],
           );
-          stubAddSuccess();
+          final med2 = createDailyMedication(
+            id: 'med-2',
+            timesOfDay: const [480],
+          );
+
+          when(() => mockMedicationRepository.save(any()))
+              .thenAnswer((_) async {});
+          when(() => mockMedicationRepository.saveDoseRecord(any()))
+              .thenAnswer((_) async {});
+          when(() => mockReminderRepository.save(any()))
+              .thenAnswer((_) async {});
+
+          when(() => mockReminderRepository.getByScheduledTime(scheduledTime))
+              .thenAnswer((_) async => []);
+
+          when(() => mockAlarmService.setAlarm(
+                id: any(named: 'id'),
+                dateTime: any(named: 'dateTime'),
+                notificationTitle: any(named: 'notificationTitle'),
+                notificationBody: any(named: 'notificationBody'),
+                voicePayload: any(named: 'voicePayload'),
+              )).thenAnswer((_) async => true);
+
+          await addMedication.call(med1);
+
+          verify(() => mockReminderRepository.getByScheduledTime(scheduledTime))
+              .called(1);
+          final firstSave = verify(
+            () => mockReminderRepository.save(captureAny()),
+          ).captured.first as Reminder;
+          expect(firstSave.groupDoseCount, equals(1));
+
+          when(() => mockReminderRepository.getByScheduledTime(scheduledTime))
+              .thenAnswer((_) async => [firstSave]);
+
+          await addMedication.call(med2);
+
+          final secondSave = verify(
+            () => mockReminderRepository.save(captureAny()),
+          ).captured.last as Reminder;
+          expect(secondSave.groupDoseCount, equals(2));
+        },
+      );
+
+      test(
+        'two medications at different times create separate Reminders',
+        () async {
+          final now = DateTime.now().toUtc();
+          final eightAm = DateTime.utc(now.year, now.month, now.day, 8, 0);
+          final eightPm = DateTime.utc(now.year, now.month, now.day, 20, 0);
+
+          final med1 = createDailyMedication(
+            id: 'med-1',
+            timesOfDay: const [480],
+          );
+          final med2 = createDailyMedication(
+            id: 'med-2',
+            timesOfDay: const [1200],
+          );
+
+          when(() => mockMedicationRepository.save(any()))
+              .thenAnswer((_) async {});
+          when(() => mockMedicationRepository.saveDoseRecord(any()))
+              .thenAnswer((_) async {});
+          when(() => mockReminderRepository.save(any()))
+              .thenAnswer((_) async {});
+
+          when(() => mockReminderRepository.getByScheduledTime(
+                eightAm.millisecondsSinceEpoch))
+              .thenAnswer((_) async => []);
+          when(() => mockReminderRepository.getByScheduledTime(
+                eightPm.millisecondsSinceEpoch))
+              .thenAnswer((_) async => []);
+
+          when(() => mockAlarmService.setAlarm(
+                id: any(named: 'id'),
+                dateTime: any(named: 'dateTime'),
+                notificationTitle: any(named: 'notificationTitle'),
+                notificationBody: any(named: 'notificationBody'),
+                voicePayload: any(named: 'voicePayload'),
+              )).thenAnswer((_) async => true);
+
+          await addMedication.call(med1);
+          await addMedication.call(med2);
+
+          final savedReminders = verify(
+            () => mockReminderRepository.save(captureAny()),
+          ).captured.cast<Reminder>();
+
+          expect(savedReminders.length, equals(2));
+          expect(savedReminders[0].groupDoseCount, equals(1));
+          expect(savedReminders[1].groupDoseCount, equals(1));
+        },
+      );
+
+      test(
+        'adding third medication at same time increments groupDoseCount to 3',
+        () async {
+          final now = DateTime.now().toUtc();
+          final eightAmToday = DateTime.utc(now.year, now.month, now.day, 8, 0);
+          final scheduledTime = eightAmToday.millisecondsSinceEpoch;
+
+          final med1 = createDailyMedication(id: 'med-1');
+          final med2 = createDailyMedication(id: 'med-2');
+          final med3 = createDailyMedication(id: 'med-3');
+
+          when(() => mockMedicationRepository.save(any()))
+              .thenAnswer((_) async {});
+          when(() => mockMedicationRepository.saveDoseRecord(any()))
+              .thenAnswer((_) async {});
+          when(() => mockReminderRepository.save(any()))
+              .thenAnswer((_) async {});
+
+          final existingReminder = Reminder(
+            id: 'existing-reminder',
+            profileId: 'default',
+            type: 'medication',
+            title: 'Morning Medications',
+            body: null,
+            status: ReminderStatus.scheduled,
+            scheduledTime: scheduledTime,
+            groupDoseCount: 2,
+            policy: const EscalationPolicy(),
+            createdAt: now.millisecondsSinceEpoch,
+            updatedAt: now.millisecondsSinceEpoch,
+          );
+
+          when(() => mockReminderRepository.getByScheduledTime(scheduledTime))
+              .thenAnswer((_) async => [existingReminder]);
+
+          when(() => mockAlarmService.setAlarm(
+                id: any(named: 'id'),
+                dateTime: any(named: 'dateTime'),
+                notificationTitle: any(named: 'notificationTitle'),
+                notificationBody: any(named: 'notificationBody'),
+                voicePayload: any(named: 'voicePayload'),
+              )).thenAnswer((_) async => true);
+
+          await addMedication.call(med3);
+
+          final updatedReminder = verify(
+            () => mockReminderRepository.save(captureAny()),
+          ).captured.last as Reminder;
+          expect(updatedReminder.groupDoseCount, equals(3));
+        },
+      );
+    });
+
+    group('Weekly Frequency', () {
+      test(
+        'weekly frequency creates reminders only on specified weekdays',
+        () async {
+          final now = DateTime.now().toUtc();
+          final medication = Medication(
+            id: 'med-weekly',
+            profileId: 'default',
+            name: 'Vitamin D',
+            dosage: '1000IU',
+            frequency: MedicationFrequency.weekly(
+              timesOfDay: const [480],
+              weekDays: const [1, 3, 5], // Mon, Wed, Fri
+            ),
+            reminderDuration: const ReminderDuration.fixedDays(days: 14),
+            createdAt: now.millisecondsSinceEpoch,
+            updatedAt: now.millisecondsSinceEpoch,
+          );
+
+          when(() => mockMedicationRepository.save(any()))
+              .thenAnswer((_) async {});
+          when(() => mockMedicationRepository.saveDoseRecord(any()))
+              .thenAnswer((_) async {});
+          when(() => mockReminderRepository.save(any()))
+              .thenAnswer((_) async {});
+          when(() => mockReminderRepository.getByScheduledTime(any()))
+              .thenAnswer((_) async => []);
+          when(() => mockAlarmService.setAlarm(
+                id: any(named: 'id'),
+                dateTime: any(named: 'dateTime'),
+                notificationTitle: any(named: 'notificationTitle'),
+                notificationBody: any(named: 'notificationBody'),
+                voicePayload: any(named: 'voicePayload'),
+              )).thenAnswer((_) async => true);
 
           await addMedication.call(medication);
 
-          final captured = verify(
+          final savedReminders = verify(
             () => mockReminderRepository.save(captureAny()),
-          ).captured;
-          // Default is 7 days. Due to time filtering, may get 6 or 7 depending on current hour
-          expect(captured.length, greaterThanOrEqualTo(6));
+          ).captured.cast<Reminder>();
+
+          expect(savedReminders.length, greaterThan(0));
+
+          for (final reminder in savedReminders) {
+            final reminderDate =
+                DateTime.fromMillisecondsSinceEpoch(reminder.scheduledTime);
+            expect([1, 3, 5], contains(reminderDate.weekday));
+          }
+        },
+      );
+
+      test(
+        'weekly frequency with multiple times creates correct reminder count',
+        () async {
+          final now = DateTime.now().toUtc();
+          final medication = Medication(
+            id: 'med-weekly-multi',
+            profileId: 'default',
+            name: 'B-Complex',
+            dosage: '1 tablet',
+            frequency: MedicationFrequency.weekly(
+              timesOfDay: const [480, 1200], // 8 AM and 8 PM
+              weekDays: const [1], // Monday only
+            ),
+            reminderDuration: const ReminderDuration.fixedDays(days: 7),
+            createdAt: now.millisecondsSinceEpoch,
+            updatedAt: now.millisecondsSinceEpoch,
+          );
+
+          when(() => mockMedicationRepository.save(any()))
+              .thenAnswer((_) async {});
+          when(() => mockMedicationRepository.saveDoseRecord(any()))
+              .thenAnswer((_) async {});
+          when(() => mockReminderRepository.save(any()))
+              .thenAnswer((_) async {});
+          when(() => mockReminderRepository.getByScheduledTime(any()))
+              .thenAnswer((_) async => []);
+          when(() => mockAlarmService.setAlarm(
+                id: any(named: 'id'),
+                dateTime: any(named: 'dateTime'),
+                notificationTitle: any(named: 'notificationTitle'),
+                notificationBody: any(named: 'notificationBody'),
+                voicePayload: any(named: 'voicePayload'),
+              )).thenAnswer((_) async => true);
+
+          await addMedication.call(medication);
+
+          final savedReminders = verify(
+            () => mockReminderRepository.save(captureAny()),
+          ).captured.cast<Reminder>();
+
+          expect(savedReminders.length, greaterThan(0));
+
+          final mondayReminders = savedReminders.where((r) {
+            final date = DateTime.fromMillisecondsSinceEpoch(r.scheduledTime);
+            return date.weekday == 1;
+          }).toList();
+
+          for (final reminder in mondayReminders) {
+            final date = DateTime.fromMillisecondsSinceEpoch(reminder.scheduledTime);
+            expect([8, 20], contains(date.hour));
+          }
+        },
+      );
+    });
+
+    group('Interval Frequency', () {
+      test(
+        'interval frequency creates reminders at specified hour intervals',
+        () async {
+          final now = DateTime.now().toUtc();
+          final medication = Medication(
+            id: 'med-interval',
+            profileId: 'default',
+            name: 'Antibiotic',
+            dosage: '500mg',
+            frequency: const MedicationFrequency.interval(intervalHours: 8),
+            reminderDuration: const ReminderDuration.fixedDays(days: 2),
+            createdAt: now.millisecondsSinceEpoch,
+            updatedAt: now.millisecondsSinceEpoch,
+          );
+
+          when(() => mockMedicationRepository.save(any()))
+              .thenAnswer((_) async {});
+          when(() => mockMedicationRepository.saveDoseRecord(any()))
+              .thenAnswer((_) async {});
+          when(() => mockReminderRepository.save(any()))
+              .thenAnswer((_) async {});
+          when(() => mockReminderRepository.getByScheduledTime(any()))
+              .thenAnswer((_) async => []);
+          when(() => mockAlarmService.setAlarm(
+                id: any(named: 'id'),
+                dateTime: any(named: 'dateTime'),
+                notificationTitle: any(named: 'notificationTitle'),
+                notificationBody: any(named: 'notificationBody'),
+                voicePayload: any(named: 'voicePayload'),
+              )).thenAnswer((_) async => true);
+
+          await addMedication.call(medication);
+
+          final savedReminders = verify(
+            () => mockReminderRepository.save(captureAny()),
+          ).captured.cast<Reminder>();
+
+          expect(savedReminders.length, greaterThan(1));
+
+          final sortedReminders = savedReminders
+            ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+          for (var i = 1; i < sortedReminders.length; i++) {
+            final prevTime = DateTime.fromMillisecondsSinceEpoch(
+                sortedReminders[i - 1].scheduledTime);
+            final currTime = DateTime.fromMillisecondsSinceEpoch(
+                sortedReminders[i].scheduledTime);
+            final diffHours = currTime.difference(prevTime).inHours;
+            expect(diffHours, equals(8));
+          }
         },
       );
     });

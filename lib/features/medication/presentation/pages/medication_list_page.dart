@@ -230,32 +230,15 @@ class MedicationListPage extends ConsumerWidget {
     DoseConfirmationSheet.show(
       context,
       slot: slot,
-      onConfirmed: () async {
+      onStartConfirmation: () async {
         final notifier = ref.read(medicationNotifierProvider.notifier);
-        final doseRecord = await notifier.takeDose(
+        await notifier.takeDose(
           medicationId: slot.medication.id,
           reminderId: slot.doseRecord?.reminderId ?? '',
         );
-
-        if (doseRecord != null && context.mounted) {
-          // 5-second undo snackbar — undo over confirm (§10.1)
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
-                  Text('Dose taken! +${slot.medication.xpValue} XP'),
-                ],
-              ),
-              duration: const Duration(seconds: 5),
-              action: SnackBarAction(
-                label: 'Undo',
-                onPressed: () => notifier.undoLastDose(),
-              ),
-            ),
-          );
-        }
+      },
+      onConfirmed: () {
+        // Confetti + XP shown in sheet
       },
     );
   }

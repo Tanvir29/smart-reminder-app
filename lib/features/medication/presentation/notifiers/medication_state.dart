@@ -32,8 +32,11 @@ class MedicationState with _$MedicationState {
   List<TodayDoseSlot> get todaySlots {
     final now = DateTime.now();
     final nowMinutes = now.hour * 60 + now.minute;
-    final todayStart =
-        DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+    final todayStart = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).millisecondsSinceEpoch;
     final slots = <TodayDoseSlot>[];
 
     for (final med in medications) {
@@ -52,7 +55,7 @@ class MedicationState with _$MedicationState {
           }
           return result;
         },
-        asNeeded: (_) => <int>[],
+        oneTime: (f) => [f.scheduledTimeMinutes],
       );
 
       for (final timeMinutes in times) {
@@ -80,19 +83,22 @@ class MedicationState with _$MedicationState {
           slotStatus = DoseSlotStatus.upcoming;
         }
 
-        slots.add(TodayDoseSlot(
-          medication: med,
-          scheduledTimeMinutes: timeMinutes,
-          scheduledTimeMs: scheduledMs,
-          status: slotStatus,
-          doseRecord: matchingDose,
-          reminderId: matchingDose?.reminderId,
-        ));
+        slots.add(
+          TodayDoseSlot(
+            medication: med,
+            scheduledTimeMinutes: timeMinutes,
+            scheduledTimeMs: scheduledMs,
+            status: slotStatus,
+            doseRecord: matchingDose,
+            reminderId: matchingDose?.reminderId,
+          ),
+        );
       }
     }
 
     slots.sort(
-        (a, b) => a.scheduledTimeMinutes.compareTo(b.scheduledTimeMinutes));
+      (a, b) => a.scheduledTimeMinutes.compareTo(b.scheduledTimeMinutes),
+    );
     return slots;
   }
 

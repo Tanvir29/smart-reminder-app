@@ -31,9 +31,9 @@ class AddMedication {
     required MedicationRepository medicationRepository,
     required ReminderRepository reminderRepository,
     required AlarmService alarmService,
-  })  : _medicationRepository = medicationRepository,
-        _reminderRepository = reminderRepository,
-        _alarmService = alarmService;
+  }) : _medicationRepository = medicationRepository,
+       _reminderRepository = reminderRepository,
+       _alarmService = alarmService;
 
   /// Persists [medication], generates [Reminder] entities based on
   /// the medication's reminderDuration field, and schedules the earliest
@@ -101,7 +101,11 @@ class AddMedication {
         nowMillis: nowMillis,
         durationDays: durationDays,
       ),
-      asNeeded: (_) => <_TimeSlotData>[],
+      oneTime: (oneTime) => _createOneTimeSlot(
+        scheduledTimeMinutes: oneTime.scheduledTimeMinutes,
+        startDate: startDate,
+        nowMillis: nowMillis,
+      ),
     );
 
     Reminder? earliestReminder;
@@ -181,8 +185,9 @@ class AddMedication {
     required String medicationName,
     String? reminderMessage,
   }) async {
-    final dateTime =
-        DateTime.fromMillisecondsSinceEpoch(reminder.scheduledTime);
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(
+      reminder.scheduledTime,
+    );
     // Use generic placeholders — HandleAlarmFired will construct
     // the dynamic notification body at alarm-fire-time.
     await _alarmService.setAlarm(
@@ -216,10 +221,12 @@ class AddMedication {
           minutesFromMidnight % 60,
         );
         if (scheduledDateTime.millisecondsSinceEpoch > nowMillis) {
-          slots.add(_TimeSlotData(
-            scheduledTime: scheduledDateTime.millisecondsSinceEpoch,
-            hour: scheduledDateTime.hour,
-          ));
+          slots.add(
+            _TimeSlotData(
+              scheduledTime: scheduledDateTime.millisecondsSinceEpoch,
+              hour: scheduledDateTime.hour,
+            ),
+          );
         }
       }
     }
@@ -246,10 +253,12 @@ class AddMedication {
           minutesFromMidnight % 60,
         );
         if (scheduledDateTime.millisecondsSinceEpoch > nowMillis) {
-          slots.add(_TimeSlotData(
-            scheduledTime: scheduledDateTime.millisecondsSinceEpoch,
-            hour: scheduledDateTime.hour,
-          ));
+          slots.add(
+            _TimeSlotData(
+              scheduledTime: scheduledDateTime.millisecondsSinceEpoch,
+              hour: scheduledDateTime.hour,
+            ),
+          );
         }
       }
     }
@@ -267,12 +276,64 @@ class AddMedication {
     var nextTime = startDate;
     while (nextTime.isBefore(endDate)) {
       if (nextTime.millisecondsSinceEpoch > nowMillis) {
-        slots.add(_TimeSlotData(
-          scheduledTime: nextTime.millisecondsSinceEpoch,
-          hour: nextTime.hour,
-        ));
+        slots.add(
+          _TimeSlotData(
+            scheduledTime: nextTime.millisecondsSinceEpoch,
+            hour: nextTime.hour,
+          ),
+        );
       }
       nextTime = nextTime.add(Duration(hours: intervalHours));
+    }
+    return slots;
+  }
+
+  List<_TimeSlotData> _createOneTimeSlot({
+    required int scheduledTimeMinutes,
+    required DateTime startDate,
+    required int nowMillis,
+  }) {
+    final slots = <_TimeSlotData>[];
+    final date = startDate;
+    final scheduledDateTime = DateTime.utc(
+      date.year,
+      date.month,
+      date.day,
+      scheduledTimeMinutes ~/ 60,
+      scheduledTimeMinutes % 60,
+    );
+    if (scheduledDateTime.millisecondsSinceEpoch > nowMillis) {
+      slots.add(
+        _TimeSlotData(
+          scheduledTime: scheduledDateTime.millisecondsSinceEpoch,
+          hour: scheduledDateTime.hour,
+        ),
+      );
+    }
+    return slots;
+  }
+
+  List<_TimeSlotData> _createOneTimeSlot({
+    required int scheduledTimeMinutes,
+    required DateTime startDate,
+    required int nowMillis,
+  }) {
+    final slots = <_TimeSlotData>[];
+    final date = startDate;
+    final scheduledDateTime = DateTime.utc(
+      date.year,
+      date.month,
+      date.day,
+      scheduledTimeMinutes ~/ 60,
+      scheduledTimeMinutes % 60,
+    );
+    if (scheduledDateTime.millisecondsSinceEpoch > nowMillis) {
+      slots.add(
+        _TimeSlotData(
+          scheduledTime: scheduledDateTime.millisecondsSinceEpoch,
+          hour: scheduledDateTime.hour,
+        ),
+      );
     }
     return slots;
   }
@@ -282,8 +343,5 @@ class _TimeSlotData {
   final int scheduledTime;
   final int hour;
 
-  _TimeSlotData({
-    required this.scheduledTime,
-    required this.hour,
-  });
+  _TimeSlotData({required this.scheduledTime, required this.hour});
 }

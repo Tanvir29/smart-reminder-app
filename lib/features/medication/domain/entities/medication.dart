@@ -22,12 +22,13 @@ class MedicationFrequency with _$MedicationFrequency {
   }) = WeeklyFrequency;
 
   /// Medication taken at a fixed hour interval.
-  const factory MedicationFrequency.interval({
-    required int intervalHours,
-  }) = IntervalFrequency;
+  const factory MedicationFrequency.interval({required int intervalHours}) =
+      IntervalFrequency;
 
-  /// Medication taken as needed (no fixed schedule).
-  const factory MedicationFrequency.asNeeded() = AsNeededFrequency;
+  /// Medication taken at a specific scheduled time (one-time reminder).
+  const factory MedicationFrequency.oneTime({
+    required int scheduledTimeMinutes, // minutes from midnight
+  }) = OneTimeFrequency;
 
   factory MedicationFrequency.fromJson(Map<String, dynamic> json) =>
       _$MedicationFrequencyFromJson(json);
@@ -38,9 +39,8 @@ class MedicationFrequency with _$MedicationFrequency {
 @freezed
 class ReminderDuration with _$ReminderDuration {
   /// Fixed duration in days (default: 7 days).
-  const factory ReminderDuration.fixedDays({
-    @Default(7) int days,
-  }) = FixedDaysDuration;
+  const factory ReminderDuration.fixedDays({@Default(7) int days}) =
+      FixedDaysDuration;
 
   /// One month duration (30 days).
   const factory ReminderDuration.oneMonth() = OneMonthDuration;
@@ -49,9 +49,8 @@ class ReminderDuration with _$ReminderDuration {
   const factory ReminderDuration.continuous() = ContinuousDuration;
 
   /// Custom end date/time (Unix milliseconds).
-  const factory ReminderDuration.custom({
-    required int endTime,
-  }) = CustomDuration;
+  const factory ReminderDuration.custom({required int endTime}) =
+      CustomDuration;
 
   factory ReminderDuration.fromJson(Map<String, dynamic> json) =>
       _$ReminderDurationFromJson(json);

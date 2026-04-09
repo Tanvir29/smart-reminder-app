@@ -88,28 +88,35 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
             const SizedBox(height: 24),
 
             // ── Frequency type ──────────────────────────────────────────
-            Text('Frequency',
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              'Frequency',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 8),
             SegmentedButton<String>(
               segments: const [
                 ButtonSegment(
-                    value: 'daily',
-                    label: Text('Daily'),
-                    icon: Icon(Icons.calendar_today, size: 18)),
+                  value: 'daily',
+                  label: Text('Daily'),
+                  icon: Icon(Icons.calendar_today, size: 18),
+                ),
                 ButtonSegment(
-                    value: 'weekly',
-                    label: Text('Weekly'),
-                    icon: Icon(Icons.calendar_view_week, size: 18)),
+                  value: 'weekly',
+                  label: Text('Weekly'),
+                  icon: Icon(Icons.calendar_view_week, size: 18),
+                ),
                 ButtonSegment(
-                    value: 'interval',
-                    label: Text('Interval'),
-                    icon: Icon(Icons.timer, size: 18)),
+                  value: 'interval',
+                  label: Text('Interval'),
+                  icon: Icon(Icons.timer, size: 18),
+                ),
                 ButtonSegment(
-                    value: 'asNeeded',
-                    label: Text('PRN'),
-                    icon: Icon(Icons.touch_app, size: 18)),
+                  value: 'oneTime',
+                  label: Text('One-time'),
+                  icon: Icon(Icons.event, size: 18),
+                ),
               ],
               selected: {_frequencyType},
               onSelectionChanged: (s) =>
@@ -122,6 +129,7 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
               _buildTimePickers(theme),
             if (_frequencyType == 'weekly') _buildWeekDayPicker(theme),
             if (_frequencyType == 'interval') _buildIntervalPicker(theme),
+            if (_frequencyType == 'oneTime') _buildOneTimePicker(theme),
             const SizedBox(height: 16),
 
             // ── Instructions ────────────────────────────────────────────
@@ -152,28 +160,35 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
             const SizedBox(height: 16),
 
             // ── Reminder Duration ───────────────────────────────────────
-            Text('Reminder Duration',
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              'Reminder Duration',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 8),
             SegmentedButton<String>(
               segments: const [
                 ButtonSegment(
-                    value: 'fixedDays',
-                    label: Text('7 Days'),
-                    icon: Icon(Icons.calendar_view_week, size: 18)),
+                  value: 'fixedDays',
+                  label: Text('7 Days'),
+                  icon: Icon(Icons.calendar_view_week, size: 18),
+                ),
                 ButtonSegment(
-                    value: 'oneMonth',
-                    label: Text('1 Month'),
-                    icon: Icon(Icons.calendar_month, size: 18)),
+                  value: 'oneMonth',
+                  label: Text('1 Month'),
+                  icon: Icon(Icons.calendar_month, size: 18),
+                ),
                 ButtonSegment(
-                    value: 'continuous',
-                    label: Text('Ongoing'),
-                    icon: Icon(Icons.all_inclusive, size: 18)),
+                  value: 'continuous',
+                  label: Text('Ongoing'),
+                  icon: Icon(Icons.all_inclusive, size: 18),
+                ),
                 ButtonSegment(
-                    value: 'custom',
-                    label: Text('Custom'),
-                    icon: Icon(Icons.tune, size: 18)),
+                  value: 'custom',
+                  label: Text('Custom'),
+                  icon: Icon(Icons.tune, size: 18),
+                ),
               ],
               selected: {_durationType},
               onSelectionChanged: (s) =>
@@ -205,14 +220,14 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _customUnit,
-                      decoration: const InputDecoration(
-                        labelText: 'Unit',
-                      ),
+                      decoration: const InputDecoration(labelText: 'Unit'),
                       items: const [
                         DropdownMenuItem(value: 'days', child: Text('Days')),
                         DropdownMenuItem(value: 'weeks', child: Text('Weeks')),
                         DropdownMenuItem(
-                            value: 'months', child: Text('Months')),
+                          value: 'months',
+                          child: Text('Months'),
+                        ),
                       ],
                       onChanged: (v) {
                         if (v != null) setState(() => _customUnit = v);
@@ -235,7 +250,9 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Icon(Icons.check),
                 label: Text(_saving ? 'Saving...' : 'Save Medication'),
@@ -261,7 +278,8 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
             IconButton(
               icon: const Icon(Icons.add_circle_outline),
               onPressed: () => setState(
-                  () => _times.add(const TimeOfDay(hour: 12, minute: 0))),
+                () => _times.add(const TimeOfDay(hour: 12, minute: 0)),
+              ),
             ),
           ],
         ),
@@ -269,8 +287,10 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
           return ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.access_time, color: ADHDColors.upcoming),
-            title: Text(_times[i].format(context),
-                style: theme.textTheme.titleMedium),
+            title: Text(
+              _times[i].format(context),
+              style: theme.textTheme.titleMedium,
+            ),
             trailing: _times.length > 1
                 ? IconButton(
                     icon: const Icon(Icons.remove_circle_outline),
@@ -319,8 +339,9 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
                 child: Text(
                   labels[i],
                   style: TextStyle(
-                    color:
-                        selected ? Colors.white : theme.colorScheme.onSurface,
+                    color: selected
+                        ? Colors.white
+                        : theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -346,6 +367,48 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
           divisions: 23,
           label: '$_intervalHours hours',
           onChanged: (v) => setState(() => _intervalHours = v.round()),
+        ),
+      ],
+    );
+  }
+
+  // ── One-time picker ──────────────────────────────────────────────────────
+
+  Widget _buildOneTimePicker(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Select reminder time', style: theme.textTheme.bodyLarge),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () async {
+            final TimeOfDay? picked = await showTimePicker(
+              context: context,
+              initialTime: _times.isNotEmpty ? _times.first : TimeOfDay.now(),
+            );
+            if (picked != null) {
+              setState(() => _times = [picked]);
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.colorScheme.outline),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.access_time, color: theme.colorScheme.primary),
+                const SizedBox(width: 12),
+                Text(
+                  _times.isNotEmpty
+                      ? '${_times.first.hour.toString().padLeft(2, '0')}:${_times.first.minute.toString().padLeft(2, '0')}'
+                      : 'Select time',
+                  style: theme.textTheme.bodyLarge,
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -379,9 +442,7 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
         break;
     }
 
-    return ReminderDuration.custom(
-      endTime: endDate.millisecondsSinceEpoch,
-    );
+    return ReminderDuration.custom(endTime: endDate.millisecondsSinceEpoch);
   }
 
   // ── Save action ──────────────────────────────────────────────────────────
@@ -390,9 +451,9 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_frequencyType == 'weekly' && _weekDays.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select at least one day')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Select at least one day')));
       return;
     }
 
@@ -404,11 +465,16 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
     final frequency = switch (_frequencyType) {
       'daily' => MedicationFrequency.daily(timesOfDay: timesMinutes),
       'weekly' => MedicationFrequency.weekly(
-          timesOfDay: timesMinutes,
-          weekDays: _weekDays..sort(),
-        ),
+        timesOfDay: timesMinutes,
+        weekDays: _weekDays..sort(),
+      ),
       'interval' => MedicationFrequency.interval(intervalHours: _intervalHours),
-      _ => const MedicationFrequency.asNeeded(),
+      'oneTime' => MedicationFrequency.oneTime(
+        scheduledTimeMinutes: timesMinutes.isNotEmpty
+            ? timesMinutes.first
+            : 480,
+      ),
+      _ => MedicationFrequency.daily(timesOfDay: timesMinutes),
     };
 
     final reminderDuration = switch (_durationType) {
@@ -443,9 +509,9 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not save: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not save: $e')));
       }
     }
   }

@@ -1,8 +1,9 @@
 /// Today's Dashboard — the medication home screen.
 ///
-/// High-contrast reminder list for the current 24-hour window.
-/// Single FAB to add medication (§10.1 single primary action per screen).
-/// Pull-to-refresh. Progress-oriented: adherence bar, not failure counts.
+/// High-contrast grouped reminder list for the current 24-hour window.
+/// Medications at the same time are grouped into a single card (§10.1).
+/// Single FAB to add medication. Pull-to-refresh.
+/// Progress-oriented: adherence bar, not failure counts.
 library;
 
 import 'package:flutter/material.dart';
@@ -12,9 +13,7 @@ import 'package:smart_reminder_app/app/theme/adhd_colors.dart';
 import 'package:smart_reminder_app/features/medication/presentation/notifiers/medication_notifier.dart';
 import 'package:smart_reminder_app/features/medication/presentation/notifiers/medication_state.dart';
 import 'package:smart_reminder_app/features/medication/presentation/widgets/dose_confirmation_sheet.dart';
-import 'package:smart_reminder_app/features/medication/presentation/widgets/medication_tile.dart';
 
-/// Lists today's dose schedule sorted chronologically.
 class MedicationListPage extends ConsumerWidget {
   const MedicationListPage({super.key});
 
@@ -29,7 +28,6 @@ class MedicationListPage extends ConsumerWidget {
         error: (error, _) => _buildErrorState(context, ref, theme),
         data: (state) => _buildDashboard(context, ref, state, theme),
       ),
-      // Single primary action per screen (§10.1)
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/medications/add'),
         icon: const Icon(Icons.add),
@@ -37,8 +35,6 @@ class MedicationListPage extends ConsumerWidget {
       ),
     );
   }
-
-  // ── Error state ──────────────────────────────────────────────────────────
 
   Widget _buildErrorState(
       BuildContext context, WidgetRef ref, ThemeData theme) {
@@ -61,17 +57,15 @@ class MedicationListPage extends ConsumerWidget {
     );
   }
 
-  // ── Dashboard ────────────────────────────────────────────────────────────
-
   Widget _buildDashboard(
     BuildContext context,
     WidgetRef ref,
     MedicationState state,
     ThemeData theme,
   ) {
-    final slots = state.todaySlots;
+    final groups = state.todayGroups;
 
-    if (slots.isEmpty && state.medications.isEmpty) {
+    if (groups.isEmpty && state.medications.isEmpty) {
       return _buildEmptyState(theme);
     }
 
@@ -79,11 +73,8 @@ class MedicationListPage extends ConsumerWidget {
       onRefresh: () async => ref.invalidate(medicationNotifierProvider),
       child: CustomScrollView(
         slivers: [
-          // Header: date + adherence bar
           SliverToBoxAdapter(child: _buildHeader(state, theme)),
-
-          // Dose slot list
-          if (slots.isEmpty)
+          if (groups.isEmpty)
             SliverFillRemaining(
               child: Center(
                 child: Text('No doses scheduled for today',
@@ -92,17 +83,11 @@ class MedicationListPage extends ConsumerWidget {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.only(bottom: 88), // FAB clearance
+              padding: const EdgeInsets.only(bottom: 88),
               sliver: SliverList.builder(
-                itemCount: slots.length,
+                itemCount: groups.length,
                 itemBuilder: (context, index) {
-                  final slot = slots[index];
-                  return MedicationTile(
-                    slot: slot,
-                    onTap: slot.status == DoseSlotStatus.upcoming
-                        ? () => _showConfirmation(context, ref, slot)
-                        : null,
-                  );
+                  return _buildGroupCard(context, ref, groups[index], theme);
                 },
               ),
             ),
@@ -157,8 +142,6 @@ class MedicationListPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Adherence progress bar — progress, not perfection (§10.1)
           Row(
             children: [
               Expanded(
@@ -195,6 +178,156 @@ class MedicationListPage extends ConsumerWidget {
     );
   }
 
+  // ── Group card ───────────────────────────────────────────────────────────
+
+  Widget _buildGroupCard(
+    BuildContext context,
+    WidgetRef ref,
+    GroupedDoseSlot group,
+    ThemeData theme,
+  ) {
+    final status = group.status;
+    final isActionable = status == DoseSlotStatus.upcoming ||
+        status == DoseSlotStatus.partiallyTaken;
+    final color = _groupColor(status);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: color.withOpacity(0.4), width: 1.5),
+      ),
+      child: InkWell(
+        onTap: isActionable
+            ? () => _showBatchConfirmation(context, ref, group)
+            : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Time header row
+              Row(
+                children: [
+                  Icon(_groupIcon(status), color: color, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    group.formattedTime,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (group.count > 1)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${group.takenCount}/${group.count}',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  if (isActionable) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right,
+                      color: theme.colorScheme.onSurface.withOpacity(0.3),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Medication chips
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: group.slots.map((slot) {
+                  final slotColor = _slotColor(slot.status, theme);
+                  final lineThrough = slot.status == DoseSlotStatus.taken;
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: slotColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: slotColor.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _medicationIcon(slot.medication.iconName),
+                          size: 14,
+                          color: slotColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          slot.medication.name,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: lineThrough
+                                ? theme.colorScheme.onSurface.withOpacity(0.5)
+                                : null,
+                            fontWeight: FontWeight.w500,
+                            decoration:
+                                lineThrough ? TextDecoration.lineThrough : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _groupColor(DoseSlotStatus status) => switch (status) {
+        DoseSlotStatus.taken => ADHDColors.taken,
+        DoseSlotStatus.missed => ADHDColors.missed,
+        DoseSlotStatus.upcoming => ADHDColors.upcoming,
+        DoseSlotStatus.partiallyTaken => ADHDColors.snoozed,
+      };
+
+  IconData _groupIcon(DoseSlotStatus status) => switch (status) {
+        DoseSlotStatus.taken => Icons.check_circle,
+        DoseSlotStatus.missed => Icons.cancel,
+        DoseSlotStatus.upcoming => Icons.schedule,
+        DoseSlotStatus.partiallyTaken => Icons.indeterminate_check_box,
+      };
+
+  Color _slotColor(DoseSlotStatus status, ThemeData theme) => switch (status) {
+        DoseSlotStatus.taken => ADHDColors.taken,
+        DoseSlotStatus.missed => ADHDColors.missed,
+        DoseSlotStatus.upcoming => ADHDColors.upcoming,
+        DoseSlotStatus.partiallyTaken => ADHDColors.snoozed,
+      };
+
+  IconData _medicationIcon(String iconName) => switch (iconName) {
+        'pill' => Icons.medication,
+        'capsule' => Icons.medication_liquid,
+        'injection' => Icons.vaccines,
+        'inhaler' => Icons.air,
+        'drops' => Icons.water_drop,
+        'cream' => Icons.spa,
+        _ => Icons.medication,
+      };
+
   // ── Empty state ──────────────────────────────────────────────────────────
 
   Widget _buildEmptyState(ThemeData theme) {
@@ -223,23 +356,24 @@ class MedicationListPage extends ConsumerWidget {
     );
   }
 
-  // ── Dose confirmation + 5-second undo snackbar ───────────────────────────
+  // ── Batch confirmation ───────────────────────────────────────────────────
 
-  void _showConfirmation(
-      BuildContext context, WidgetRef ref, TodayDoseSlot slot) {
+  void _showBatchConfirmation(
+      BuildContext context, WidgetRef ref, GroupedDoseSlot group) {
     DoseConfirmationSheet.show(
-      context,
-      slot: slot,
-      onStartConfirmation: () async {
+      context: context,
+      group: group,
+      onMedicationChecked: (medicationId) async {
         final notifier = ref.read(medicationNotifierProvider.notifier);
+        final slot = group.slots.firstWhere(
+          (s) => s.medication.id == medicationId,
+        );
         await notifier.takeDose(
-          medicationId: slot.medication.id,
+          medicationId: medicationId,
           reminderId: slot.doseRecord?.reminderId ?? '',
         );
       },
-      onConfirmed: () {
-        // Confetti + XP shown in sheet
-      },
+      onAllConfirmed: () {},
     );
   }
 }

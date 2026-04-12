@@ -67,26 +67,28 @@ void main() {
       );
     }
 
-    testWidgets('displays medication name and dosage', (tester) async {
+    GroupedDoseSlot buildGroup(TodayDoseSlot slot) =>
+        GroupedDoseSlot.fromSlots([slot]);
+
+    testWidgets('displays medication name in checklist', (tester) async {
       await tester.pumpWidget(
         buildTestWidget(
           DoseConfirmationSheet(
-            slot: testSlot,
-            onConfirmed: () {},
+            group: buildGroup(testSlot),
+            onAllConfirmed: () {},
           ),
         ),
       );
 
       expect(find.text('Aspirin'), findsOneWidget);
-      expect(find.text('100mg'), findsOneWidget);
     });
 
     testWidgets('displays scheduled time', (tester) async {
       await tester.pumpWidget(
         buildTestWidget(
           DoseConfirmationSheet(
-            slot: testSlot,
-            onConfirmed: () {},
+            group: buildGroup(testSlot),
+            onAllConfirmed: () {},
           ),
         ),
       );
@@ -94,55 +96,65 @@ void main() {
       expect(find.text('8:00 AM'), findsOneWidget);
     });
 
-    testWidgets('shows Done button initially for non-critical medication',
+    testWidgets('shows progress indicator before all checked', (tester) async {
+      await tester.pumpWidget(
+        buildTestWidget(
+          DoseConfirmationSheet(
+            group: buildGroup(testSlot),
+            onAllConfirmed: () {},
+          ),
+        ),
+      );
+
+      expect(find.text('0 of 1 checked'), findsOneWidget);
+    });
+
+    testWidgets('shows Confirm All after checklist complete', (tester) async {
+      await tester.pumpWidget(
+        buildTestWidget(
+          DoseConfirmationSheet(
+            group: buildGroup(testSlot),
+            onAllConfirmed: () {},
+          ),
+        ),
+      );
+
+      // Tap the checklist item to check it
+      await tester.tap(find.text('Aspirin'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Confirm All'), findsOneWidget);
+    });
+
+    testWidgets('shows tap-3× challenge for critical medication',
         (tester) async {
       await tester.pumpWidget(
         buildTestWidget(
           DoseConfirmationSheet(
-            slot: testSlot,
-            onConfirmed: () {},
+            group: buildGroup(criticalSlot),
+            onAllConfirmed: () {},
           ),
         ),
       );
 
-      expect(find.text('Done'), findsOneWidget);
-      expect(find.text('Swipe to confirm'), findsNothing);
-    });
+      // Check the item first
+      await tester.tap(find.text('Insulin'));
+      await tester.pumpAndSettle();
 
-    testWidgets('shows Done button initially for critical medication',
-        (tester) async {
-      await tester.pumpWidget(
-        buildTestWidget(
-          DoseConfirmationSheet(
-            slot: criticalSlot,
-            onConfirmed: () {},
-          ),
-        ),
-      );
+      // Now should show Confirm All, tap it to start finalization
+      await tester.tap(find.text('Confirm All'));
+      await tester.pumpAndSettle();
 
-      expect(find.text('Done'), findsOneWidget);
-      expect(find.text('Critical Medication'), findsNothing);
-    });
-
-    testWidgets('tap-3x button displays initial count', (tester) async {
-      await tester.pumpWidget(
-        buildTestWidget(
-          DoseConfirmationSheet(
-            slot: criticalSlot,
-            onConfirmed: () {},
-          ),
-        ),
-      );
-
-      expect(find.text('Confirm Dose (0/3)'), findsNothing);
+      expect(find.text('Critical Medication'), findsOneWidget);
+      expect(find.text('Confirm All (0/3)'), findsOneWidget);
     });
 
     testWidgets('has drag handle at top', (tester) async {
       await tester.pumpWidget(
         buildTestWidget(
           DoseConfirmationSheet(
-            slot: testSlot,
-            onConfirmed: () {},
+            group: buildGroup(testSlot),
+            onAllConfirmed: () {},
           ),
         ),
       );
@@ -158,37 +170,43 @@ void main() {
       expect(dragHandleFinder, findsOneWidget);
     });
 
-    testWidgets('displays medication icon', (tester) async {
+    testWidgets('shows CRITICAL badge for critical medications',
+        (tester) async {
       await tester.pumpWidget(
         buildTestWidget(
           DoseConfirmationSheet(
-            slot: testSlot,
-            onConfirmed: () {},
+            group: buildGroup(criticalSlot),
+            onAllConfirmed: () {},
           ),
         ),
       );
 
-      expect(find.byIcon(Icons.medication), findsOneWidget);
+      expect(find.text('CRITICAL'), findsOneWidget);
     });
 
     group('Swipe-to-confirm gesture', () {
       testWidgets(
-        'swipe to >85% threshold triggers onConfirmed callback',
+        'swipe to >85% threshold triggers onAllConfirmed callback',
         (tester) async {
           bool confirmed = false;
           await tester.pumpWidget(
             buildTestWidget(
               DoseConfirmationSheet(
-                slot: testSlot,
-                onStartConfirmation: () {},
-                onConfirmed: () {
+                group: buildGroup(testSlot),
+                onMedicationChecked: (_) {},
+                onAllConfirmed: () {
                   confirmed = true;
                 },
               ),
             ),
           );
 
-          await tester.tap(find.text('Done'));
+          // Check the checklist item
+          await tester.tap(find.text('Aspirin'));
+          await tester.pumpAndSettle();
+
+          // Tap Confirm All to start finalization
+          await tester.tap(find.text('Confirm All'));
           await tester.pumpAndSettle();
 
           expect(find.text('Swipe to confirm'), findsOneWidget);
@@ -202,22 +220,25 @@ void main() {
       );
 
       testWidgets(
-        'swipe to <85% threshold does NOT trigger onConfirmed (snaps back)',
+        'swipe to <85% threshold does NOT trigger onAllConfirmed (snaps back)',
         (tester) async {
           bool confirmed = false;
           await tester.pumpWidget(
             buildTestWidget(
               DoseConfirmationSheet(
-                slot: testSlot,
-                onStartConfirmation: () {},
-                onConfirmed: () {
+                group: buildGroup(testSlot),
+                onMedicationChecked: (_) {},
+                onAllConfirmed: () {
                   confirmed = true;
                 },
               ),
             ),
           );
 
-          await tester.tap(find.text('Done'));
+          await tester.tap(find.text('Aspirin'));
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Confirm All'));
           await tester.pumpAndSettle();
 
           final slider = find.byType(GestureDetector).last;
@@ -232,32 +253,37 @@ void main() {
 
     group('Tap-3x challenge gesture', () {
       testWidgets(
-        '3 sequential taps triggers onConfirmed callback',
+        '3 sequential taps triggers onAllConfirmed callback',
         (tester) async {
           bool confirmed = false;
           await tester.pumpWidget(
             buildTestWidget(
               DoseConfirmationSheet(
-                slot: criticalSlot,
-                onStartConfirmation: () {},
-                onConfirmed: () {
+                group: buildGroup(criticalSlot),
+                onMedicationChecked: (_) {},
+                onAllConfirmed: () {
                   confirmed = true;
                 },
               ),
             ),
           );
 
-          await tester.tap(find.text('Done'));
+          // Check the checklist item
+          await tester.tap(find.text('Insulin'));
+          await tester.pumpAndSettle();
+
+          // Tap Confirm All to start finalization
+          await tester.tap(find.text('Confirm All'));
           await tester.pumpAndSettle();
 
           expect(find.text('Critical Medication'), findsOneWidget);
-          expect(find.text('Confirm Dose (0/3)'), findsOneWidget);
+          expect(find.text('Confirm All (0/3)'), findsOneWidget);
 
-          await tester.tap(find.text('Confirm Dose (0/3)'));
+          await tester.tap(find.text('Confirm All (0/3)'));
           await tester.pump();
-          await tester.tap(find.text('Confirm Dose (1/3)'));
+          await tester.tap(find.text('Confirm All (1/3)'));
           await tester.pump();
-          await tester.tap(find.text('Confirm Dose (2/3)'));
+          await tester.tap(find.text('Confirm All (2/3)'));
           await tester.pumpAndSettle();
 
           expect(confirmed, isTrue);
@@ -265,31 +291,34 @@ void main() {
       );
 
       testWidgets(
-        '2 taps only does NOT trigger onConfirmed callback',
+        '2 taps only does NOT trigger onAllConfirmed callback',
         (tester) async {
           bool confirmed = false;
           await tester.pumpWidget(
             buildTestWidget(
               DoseConfirmationSheet(
-                slot: criticalSlot,
-                onStartConfirmation: () {},
-                onConfirmed: () {
+                group: buildGroup(criticalSlot),
+                onMedicationChecked: (_) {},
+                onAllConfirmed: () {
                   confirmed = true;
                 },
               ),
             ),
           );
 
-          await tester.tap(find.text('Done'));
+          await tester.tap(find.text('Insulin'));
           await tester.pumpAndSettle();
 
-          await tester.tap(find.text('Confirm Dose (0/3)'));
+          await tester.tap(find.text('Confirm All'));
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Confirm All (0/3)'));
           await tester.pump();
-          await tester.tap(find.text('Confirm Dose (1/3)'));
+          await tester.tap(find.text('Confirm All (1/3)'));
           await tester.pumpAndSettle();
 
           expect(confirmed, isFalse);
-          expect(find.text('Confirm Dose (2/3)'), findsOneWidget);
+          expect(find.text('Confirm All (2/3)'), findsOneWidget);
         },
       );
     });

@@ -19,7 +19,7 @@ import 'package:smart_reminder_app/features/medication/presentation/notifiers/me
 import 'package:smart_reminder_app/features/medication/presentation/widgets/confetti_overlay.dart';
 
 /// Modal bottom sheet for dose confirmation with haptic + confetti reward.
-class DoseConfirmationSheet extends StatefulWidget {
+class DoseConfirmationSheet extends ConsumerStatefulWidget {
   final TodayDoseSlot slot;
   final void Function()? onStartConfirmation;
   final void Function()? onConfirmed;
@@ -31,7 +31,6 @@ class DoseConfirmationSheet extends StatefulWidget {
     this.onConfirmed,
   });
 
-  /// Shows the sheet as a modal bottom sheet.
   static Future<void> show(
     BuildContext context, {
     required TodayDoseSlot slot,
@@ -51,7 +50,8 @@ class DoseConfirmationSheet extends StatefulWidget {
   }
 
   @override
-  State<DoseConfirmationSheet> createState() => _DoseConfirmationSheetState();
+  ConsumerState<DoseConfirmationSheet> createState() =>
+      _DoseConfirmationSheetState();
 }
 
 class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {

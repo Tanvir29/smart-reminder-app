@@ -62,8 +62,7 @@ class VoiceService implements VoicePort {
       for (int i = 0; i < messages.length; i++) {
         final msg = messages[i];
         if (msg != null && msg.isNotEmpty) {
-            buffer.write(' $msg');
-          }
+          buffer.write(' $msg');
         }
       }
     }

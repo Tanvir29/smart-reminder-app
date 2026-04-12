@@ -55,15 +55,17 @@ Map<String, dynamic> _$$IntervalFrequencyImplToJson(
       'runtimeType': instance.$type,
     };
 
-_$AsNeededFrequencyImpl _$$AsNeededFrequencyImplFromJson(
+_$OneTimeFrequencyImpl _$$OneTimeFrequencyImplFromJson(
         Map<String, dynamic> json) =>
-    _$AsNeededFrequencyImpl(
+    _$OneTimeFrequencyImpl(
+      scheduledTimeMinutes: (json['scheduledTimeMinutes'] as num).toInt(),
       $type: json['runtimeType'] as String?,
     );
 
-Map<String, dynamic> _$$AsNeededFrequencyImplToJson(
-        _$AsNeededFrequencyImpl instance) =>
+Map<String, dynamic> _$$OneTimeFrequencyImplToJson(
+        _$OneTimeFrequencyImpl instance) =>
     <String, dynamic>{
+      'scheduledTimeMinutes': instance.scheduledTimeMinutes,
       'runtimeType': instance.$type,
     };
 

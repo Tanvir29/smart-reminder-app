@@ -11,7 +11,7 @@ import 'package:smart_reminder_app/core/engine/domain/entities/escalation_policy
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/features/medication/domain/entities/dose.dart';
 import 'package:smart_reminder_app/features/medication/domain/entities/medication.dart';
 import 'package:smart_reminder_app/features/medication/domain/repositories/medication_repository.dart';
@@ -21,7 +21,7 @@ import 'package:uuid/uuid.dart';
 class AddMedication {
   final MedicationRepository _medicationRepository;
   final ReminderRepository _reminderRepository;
-  final AlarmService _alarmService;
+  final AlarmPort _alarmPort;
 
   static const _uuid = Uuid();
   static const _oneMonthDays = 30;
@@ -30,10 +30,10 @@ class AddMedication {
   const AddMedication({
     required MedicationRepository medicationRepository,
     required ReminderRepository reminderRepository,
-    required AlarmService alarmService,
-  }) : _medicationRepository = medicationRepository,
-       _reminderRepository = reminderRepository,
-       _alarmService = alarmService;
+    required AlarmPort alarmPort,
+  })  : _medicationRepository = medicationRepository,
+        _reminderRepository = reminderRepository,
+        _alarmPort = alarmPort;
 
   /// Persists [medication], generates [Reminder] entities based on
   /// the medication's reminderDuration field, and schedules the earliest
@@ -190,16 +190,11 @@ class AddMedication {
     );
     // Use generic placeholders — HandleAlarmFired will construct
     // the dynamic notification body at alarm-fire-time.
-    await _alarmService.setAlarm(
+    await _alarmPort.setAlarm(
       id: reminder.id.hashCode,
       dateTime: dateTime,
       notificationTitle: slotName,
       notificationBody: 'Preparing your reminder...',
-      voicePayload: VoicePayload(
-        slotName: slotName,
-        itemNames: [medicationName],
-        customMessages: [reminderMessage],
-      ),
     );
   }
 
@@ -284,31 +279,6 @@ class AddMedication {
         );
       }
       nextTime = nextTime.add(Duration(hours: intervalHours));
-    }
-    return slots;
-  }
-
-  List<_TimeSlotData> _createOneTimeSlot({
-    required int scheduledTimeMinutes,
-    required DateTime startDate,
-    required int nowMillis,
-  }) {
-    final slots = <_TimeSlotData>[];
-    final date = startDate;
-    final scheduledDateTime = DateTime.utc(
-      date.year,
-      date.month,
-      date.day,
-      scheduledTimeMinutes ~/ 60,
-      scheduledTimeMinutes % 60,
-    );
-    if (scheduledDateTime.millisecondsSinceEpoch > nowMillis) {
-      slots.add(
-        _TimeSlotData(
-          scheduledTime: scheduledDateTime.millisecondsSinceEpoch,
-          hour: scheduledDateTime.hour,
-        ),
-      );
     }
     return slots;
   }

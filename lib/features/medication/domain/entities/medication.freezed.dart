@@ -22,8 +22,8 @@ MedicationFrequency _$MedicationFrequencyFromJson(Map<String, dynamic> json) {
       return WeeklyFrequency.fromJson(json);
     case 'interval':
       return IntervalFrequency.fromJson(json);
-    case 'asNeeded':
-      return AsNeededFrequency.fromJson(json);
+    case 'oneTime':
+      return OneTimeFrequency.fromJson(json);
 
     default:
       throw CheckedFromJsonException(json, 'runtimeType', 'MedicationFrequency',
@@ -38,7 +38,7 @@ mixin _$MedicationFrequency {
     required TResult Function(List<int> timesOfDay) daily,
     required TResult Function(List<int> timesOfDay, List<int> weekDays) weekly,
     required TResult Function(int intervalHours) interval,
-    required TResult Function() asNeeded,
+    required TResult Function(int scheduledTimeMinutes) oneTime,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -46,7 +46,7 @@ mixin _$MedicationFrequency {
     TResult? Function(List<int> timesOfDay)? daily,
     TResult? Function(List<int> timesOfDay, List<int> weekDays)? weekly,
     TResult? Function(int intervalHours)? interval,
-    TResult? Function()? asNeeded,
+    TResult? Function(int scheduledTimeMinutes)? oneTime,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -54,7 +54,7 @@ mixin _$MedicationFrequency {
     TResult Function(List<int> timesOfDay)? daily,
     TResult Function(List<int> timesOfDay, List<int> weekDays)? weekly,
     TResult Function(int intervalHours)? interval,
-    TResult Function()? asNeeded,
+    TResult Function(int scheduledTimeMinutes)? oneTime,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -63,7 +63,7 @@ mixin _$MedicationFrequency {
     required TResult Function(DailyFrequency value) daily,
     required TResult Function(WeeklyFrequency value) weekly,
     required TResult Function(IntervalFrequency value) interval,
-    required TResult Function(AsNeededFrequency value) asNeeded,
+    required TResult Function(OneTimeFrequency value) oneTime,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -71,7 +71,7 @@ mixin _$MedicationFrequency {
     TResult? Function(DailyFrequency value)? daily,
     TResult? Function(WeeklyFrequency value)? weekly,
     TResult? Function(IntervalFrequency value)? interval,
-    TResult? Function(AsNeededFrequency value)? asNeeded,
+    TResult? Function(OneTimeFrequency value)? oneTime,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -79,7 +79,7 @@ mixin _$MedicationFrequency {
     TResult Function(DailyFrequency value)? daily,
     TResult Function(WeeklyFrequency value)? weekly,
     TResult Function(IntervalFrequency value)? interval,
-    TResult Function(AsNeededFrequency value)? asNeeded,
+    TResult Function(OneTimeFrequency value)? oneTime,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -198,7 +198,7 @@ class _$DailyFrequencyImpl implements DailyFrequency {
     required TResult Function(List<int> timesOfDay) daily,
     required TResult Function(List<int> timesOfDay, List<int> weekDays) weekly,
     required TResult Function(int intervalHours) interval,
-    required TResult Function() asNeeded,
+    required TResult Function(int scheduledTimeMinutes) oneTime,
   }) {
     return daily(timesOfDay);
   }
@@ -209,7 +209,7 @@ class _$DailyFrequencyImpl implements DailyFrequency {
     TResult? Function(List<int> timesOfDay)? daily,
     TResult? Function(List<int> timesOfDay, List<int> weekDays)? weekly,
     TResult? Function(int intervalHours)? interval,
-    TResult? Function()? asNeeded,
+    TResult? Function(int scheduledTimeMinutes)? oneTime,
   }) {
     return daily?.call(timesOfDay);
   }
@@ -220,7 +220,7 @@ class _$DailyFrequencyImpl implements DailyFrequency {
     TResult Function(List<int> timesOfDay)? daily,
     TResult Function(List<int> timesOfDay, List<int> weekDays)? weekly,
     TResult Function(int intervalHours)? interval,
-    TResult Function()? asNeeded,
+    TResult Function(int scheduledTimeMinutes)? oneTime,
     required TResult orElse(),
   }) {
     if (daily != null) {
@@ -235,7 +235,7 @@ class _$DailyFrequencyImpl implements DailyFrequency {
     required TResult Function(DailyFrequency value) daily,
     required TResult Function(WeeklyFrequency value) weekly,
     required TResult Function(IntervalFrequency value) interval,
-    required TResult Function(AsNeededFrequency value) asNeeded,
+    required TResult Function(OneTimeFrequency value) oneTime,
   }) {
     return daily(this);
   }
@@ -246,7 +246,7 @@ class _$DailyFrequencyImpl implements DailyFrequency {
     TResult? Function(DailyFrequency value)? daily,
     TResult? Function(WeeklyFrequency value)? weekly,
     TResult? Function(IntervalFrequency value)? interval,
-    TResult? Function(AsNeededFrequency value)? asNeeded,
+    TResult? Function(OneTimeFrequency value)? oneTime,
   }) {
     return daily?.call(this);
   }
@@ -257,7 +257,7 @@ class _$DailyFrequencyImpl implements DailyFrequency {
     TResult Function(DailyFrequency value)? daily,
     TResult Function(WeeklyFrequency value)? weekly,
     TResult Function(IntervalFrequency value)? interval,
-    TResult Function(AsNeededFrequency value)? asNeeded,
+    TResult Function(OneTimeFrequency value)? oneTime,
     required TResult orElse(),
   }) {
     if (daily != null) {
@@ -400,7 +400,7 @@ class _$WeeklyFrequencyImpl implements WeeklyFrequency {
     required TResult Function(List<int> timesOfDay) daily,
     required TResult Function(List<int> timesOfDay, List<int> weekDays) weekly,
     required TResult Function(int intervalHours) interval,
-    required TResult Function() asNeeded,
+    required TResult Function(int scheduledTimeMinutes) oneTime,
   }) {
     return weekly(timesOfDay, weekDays);
   }
@@ -411,7 +411,7 @@ class _$WeeklyFrequencyImpl implements WeeklyFrequency {
     TResult? Function(List<int> timesOfDay)? daily,
     TResult? Function(List<int> timesOfDay, List<int> weekDays)? weekly,
     TResult? Function(int intervalHours)? interval,
-    TResult? Function()? asNeeded,
+    TResult? Function(int scheduledTimeMinutes)? oneTime,
   }) {
     return weekly?.call(timesOfDay, weekDays);
   }
@@ -422,7 +422,7 @@ class _$WeeklyFrequencyImpl implements WeeklyFrequency {
     TResult Function(List<int> timesOfDay)? daily,
     TResult Function(List<int> timesOfDay, List<int> weekDays)? weekly,
     TResult Function(int intervalHours)? interval,
-    TResult Function()? asNeeded,
+    TResult Function(int scheduledTimeMinutes)? oneTime,
     required TResult orElse(),
   }) {
     if (weekly != null) {
@@ -437,7 +437,7 @@ class _$WeeklyFrequencyImpl implements WeeklyFrequency {
     required TResult Function(DailyFrequency value) daily,
     required TResult Function(WeeklyFrequency value) weekly,
     required TResult Function(IntervalFrequency value) interval,
-    required TResult Function(AsNeededFrequency value) asNeeded,
+    required TResult Function(OneTimeFrequency value) oneTime,
   }) {
     return weekly(this);
   }
@@ -448,7 +448,7 @@ class _$WeeklyFrequencyImpl implements WeeklyFrequency {
     TResult? Function(DailyFrequency value)? daily,
     TResult? Function(WeeklyFrequency value)? weekly,
     TResult? Function(IntervalFrequency value)? interval,
-    TResult? Function(AsNeededFrequency value)? asNeeded,
+    TResult? Function(OneTimeFrequency value)? oneTime,
   }) {
     return weekly?.call(this);
   }
@@ -459,7 +459,7 @@ class _$WeeklyFrequencyImpl implements WeeklyFrequency {
     TResult Function(DailyFrequency value)? daily,
     TResult Function(WeeklyFrequency value)? weekly,
     TResult Function(IntervalFrequency value)? interval,
-    TResult Function(AsNeededFrequency value)? asNeeded,
+    TResult Function(OneTimeFrequency value)? oneTime,
     required TResult orElse(),
   }) {
     if (weekly != null) {
@@ -576,7 +576,7 @@ class _$IntervalFrequencyImpl implements IntervalFrequency {
     required TResult Function(List<int> timesOfDay) daily,
     required TResult Function(List<int> timesOfDay, List<int> weekDays) weekly,
     required TResult Function(int intervalHours) interval,
-    required TResult Function() asNeeded,
+    required TResult Function(int scheduledTimeMinutes) oneTime,
   }) {
     return interval(intervalHours);
   }
@@ -587,7 +587,7 @@ class _$IntervalFrequencyImpl implements IntervalFrequency {
     TResult? Function(List<int> timesOfDay)? daily,
     TResult? Function(List<int> timesOfDay, List<int> weekDays)? weekly,
     TResult? Function(int intervalHours)? interval,
-    TResult? Function()? asNeeded,
+    TResult? Function(int scheduledTimeMinutes)? oneTime,
   }) {
     return interval?.call(intervalHours);
   }
@@ -598,7 +598,7 @@ class _$IntervalFrequencyImpl implements IntervalFrequency {
     TResult Function(List<int> timesOfDay)? daily,
     TResult Function(List<int> timesOfDay, List<int> weekDays)? weekly,
     TResult Function(int intervalHours)? interval,
-    TResult Function()? asNeeded,
+    TResult Function(int scheduledTimeMinutes)? oneTime,
     required TResult orElse(),
   }) {
     if (interval != null) {
@@ -613,7 +613,7 @@ class _$IntervalFrequencyImpl implements IntervalFrequency {
     required TResult Function(DailyFrequency value) daily,
     required TResult Function(WeeklyFrequency value) weekly,
     required TResult Function(IntervalFrequency value) interval,
-    required TResult Function(AsNeededFrequency value) asNeeded,
+    required TResult Function(OneTimeFrequency value) oneTime,
   }) {
     return interval(this);
   }
@@ -624,7 +624,7 @@ class _$IntervalFrequencyImpl implements IntervalFrequency {
     TResult? Function(DailyFrequency value)? daily,
     TResult? Function(WeeklyFrequency value)? weekly,
     TResult? Function(IntervalFrequency value)? interval,
-    TResult? Function(AsNeededFrequency value)? asNeeded,
+    TResult? Function(OneTimeFrequency value)? oneTime,
   }) {
     return interval?.call(this);
   }
@@ -635,7 +635,7 @@ class _$IntervalFrequencyImpl implements IntervalFrequency {
     TResult Function(DailyFrequency value)? daily,
     TResult Function(WeeklyFrequency value)? weekly,
     TResult Function(IntervalFrequency value)? interval,
-    TResult Function(AsNeededFrequency value)? asNeeded,
+    TResult Function(OneTimeFrequency value)? oneTime,
     required TResult orElse(),
   }) {
     if (interval != null) {
@@ -669,50 +669,80 @@ abstract class IntervalFrequency implements MedicationFrequency {
 }
 
 /// @nodoc
-abstract class _$$AsNeededFrequencyImplCopyWith<$Res> {
-  factory _$$AsNeededFrequencyImplCopyWith(_$AsNeededFrequencyImpl value,
-          $Res Function(_$AsNeededFrequencyImpl) then) =
-      __$$AsNeededFrequencyImplCopyWithImpl<$Res>;
+abstract class _$$OneTimeFrequencyImplCopyWith<$Res> {
+  factory _$$OneTimeFrequencyImplCopyWith(_$OneTimeFrequencyImpl value,
+          $Res Function(_$OneTimeFrequencyImpl) then) =
+      __$$OneTimeFrequencyImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({int scheduledTimeMinutes});
 }
 
 /// @nodoc
-class __$$AsNeededFrequencyImplCopyWithImpl<$Res>
-    extends _$MedicationFrequencyCopyWithImpl<$Res, _$AsNeededFrequencyImpl>
-    implements _$$AsNeededFrequencyImplCopyWith<$Res> {
-  __$$AsNeededFrequencyImplCopyWithImpl(_$AsNeededFrequencyImpl _value,
-      $Res Function(_$AsNeededFrequencyImpl) _then)
+class __$$OneTimeFrequencyImplCopyWithImpl<$Res>
+    extends _$MedicationFrequencyCopyWithImpl<$Res, _$OneTimeFrequencyImpl>
+    implements _$$OneTimeFrequencyImplCopyWith<$Res> {
+  __$$OneTimeFrequencyImplCopyWithImpl(_$OneTimeFrequencyImpl _value,
+      $Res Function(_$OneTimeFrequencyImpl) _then)
       : super(_value, _then);
 
   /// Create a copy of MedicationFrequency
   /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? scheduledTimeMinutes = null,
+  }) {
+    return _then(_$OneTimeFrequencyImpl(
+      scheduledTimeMinutes: null == scheduledTimeMinutes
+          ? _value.scheduledTimeMinutes
+          : scheduledTimeMinutes // ignore: cast_nullable_to_non_nullable
+              as int,
+    ));
+  }
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$AsNeededFrequencyImpl implements AsNeededFrequency {
-  const _$AsNeededFrequencyImpl({final String? $type})
-      : $type = $type ?? 'asNeeded';
+class _$OneTimeFrequencyImpl implements OneTimeFrequency {
+  const _$OneTimeFrequencyImpl(
+      {required this.scheduledTimeMinutes, final String? $type})
+      : $type = $type ?? 'oneTime';
 
-  factory _$AsNeededFrequencyImpl.fromJson(Map<String, dynamic> json) =>
-      _$$AsNeededFrequencyImplFromJson(json);
+  factory _$OneTimeFrequencyImpl.fromJson(Map<String, dynamic> json) =>
+      _$$OneTimeFrequencyImplFromJson(json);
+
+  @override
+  final int scheduledTimeMinutes;
 
   @JsonKey(name: 'runtimeType')
   final String $type;
 
   @override
   String toString() {
-    return 'MedicationFrequency.asNeeded()';
+    return 'MedicationFrequency.oneTime(scheduledTimeMinutes: $scheduledTimeMinutes)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$AsNeededFrequencyImpl);
+        (other.runtimeType == runtimeType &&
+            other is _$OneTimeFrequencyImpl &&
+            (identical(other.scheduledTimeMinutes, scheduledTimeMinutes) ||
+                other.scheduledTimeMinutes == scheduledTimeMinutes));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(runtimeType, scheduledTimeMinutes);
+
+  /// Create a copy of MedicationFrequency
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$OneTimeFrequencyImplCopyWith<_$OneTimeFrequencyImpl> get copyWith =>
+      __$$OneTimeFrequencyImplCopyWithImpl<_$OneTimeFrequencyImpl>(
+          this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -720,9 +750,9 @@ class _$AsNeededFrequencyImpl implements AsNeededFrequency {
     required TResult Function(List<int> timesOfDay) daily,
     required TResult Function(List<int> timesOfDay, List<int> weekDays) weekly,
     required TResult Function(int intervalHours) interval,
-    required TResult Function() asNeeded,
+    required TResult Function(int scheduledTimeMinutes) oneTime,
   }) {
-    return asNeeded();
+    return oneTime(scheduledTimeMinutes);
   }
 
   @override
@@ -731,9 +761,9 @@ class _$AsNeededFrequencyImpl implements AsNeededFrequency {
     TResult? Function(List<int> timesOfDay)? daily,
     TResult? Function(List<int> timesOfDay, List<int> weekDays)? weekly,
     TResult? Function(int intervalHours)? interval,
-    TResult? Function()? asNeeded,
+    TResult? Function(int scheduledTimeMinutes)? oneTime,
   }) {
-    return asNeeded?.call();
+    return oneTime?.call(scheduledTimeMinutes);
   }
 
   @override
@@ -742,11 +772,11 @@ class _$AsNeededFrequencyImpl implements AsNeededFrequency {
     TResult Function(List<int> timesOfDay)? daily,
     TResult Function(List<int> timesOfDay, List<int> weekDays)? weekly,
     TResult Function(int intervalHours)? interval,
-    TResult Function()? asNeeded,
+    TResult Function(int scheduledTimeMinutes)? oneTime,
     required TResult orElse(),
   }) {
-    if (asNeeded != null) {
-      return asNeeded();
+    if (oneTime != null) {
+      return oneTime(scheduledTimeMinutes);
     }
     return orElse();
   }
@@ -757,9 +787,9 @@ class _$AsNeededFrequencyImpl implements AsNeededFrequency {
     required TResult Function(DailyFrequency value) daily,
     required TResult Function(WeeklyFrequency value) weekly,
     required TResult Function(IntervalFrequency value) interval,
-    required TResult Function(AsNeededFrequency value) asNeeded,
+    required TResult Function(OneTimeFrequency value) oneTime,
   }) {
-    return asNeeded(this);
+    return oneTime(this);
   }
 
   @override
@@ -768,9 +798,9 @@ class _$AsNeededFrequencyImpl implements AsNeededFrequency {
     TResult? Function(DailyFrequency value)? daily,
     TResult? Function(WeeklyFrequency value)? weekly,
     TResult? Function(IntervalFrequency value)? interval,
-    TResult? Function(AsNeededFrequency value)? asNeeded,
+    TResult? Function(OneTimeFrequency value)? oneTime,
   }) {
-    return asNeeded?.call(this);
+    return oneTime?.call(this);
   }
 
   @override
@@ -779,28 +809,37 @@ class _$AsNeededFrequencyImpl implements AsNeededFrequency {
     TResult Function(DailyFrequency value)? daily,
     TResult Function(WeeklyFrequency value)? weekly,
     TResult Function(IntervalFrequency value)? interval,
-    TResult Function(AsNeededFrequency value)? asNeeded,
+    TResult Function(OneTimeFrequency value)? oneTime,
     required TResult orElse(),
   }) {
-    if (asNeeded != null) {
-      return asNeeded(this);
+    if (oneTime != null) {
+      return oneTime(this);
     }
     return orElse();
   }
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$AsNeededFrequencyImplToJson(
+    return _$$OneTimeFrequencyImplToJson(
       this,
     );
   }
 }
 
-abstract class AsNeededFrequency implements MedicationFrequency {
-  const factory AsNeededFrequency() = _$AsNeededFrequencyImpl;
+abstract class OneTimeFrequency implements MedicationFrequency {
+  const factory OneTimeFrequency({required final int scheduledTimeMinutes}) =
+      _$OneTimeFrequencyImpl;
 
-  factory AsNeededFrequency.fromJson(Map<String, dynamic> json) =
-      _$AsNeededFrequencyImpl.fromJson;
+  factory OneTimeFrequency.fromJson(Map<String, dynamic> json) =
+      _$OneTimeFrequencyImpl.fromJson;
+
+  int get scheduledTimeMinutes;
+
+  /// Create a copy of MedicationFrequency
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$OneTimeFrequencyImplCopyWith<_$OneTimeFrequencyImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 ReminderDuration _$ReminderDurationFromJson(Map<String, dynamic> json) {

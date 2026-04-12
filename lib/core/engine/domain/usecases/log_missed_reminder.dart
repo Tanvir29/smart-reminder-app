@@ -18,7 +18,7 @@ class LogMissedReminder {
     required ReminderRepository repository,
     required AlarmPort alarmPort,
   })  : _repository = repository,
-        _alarmPort = alarmService;
+        _alarmPort = alarmPort;
 
   /// Marks the reminder identified by [reminderId] as [ReminderStatus.missed].
   Future<Reminder> call(String reminderId) async {

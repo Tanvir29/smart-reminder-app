@@ -118,12 +118,14 @@ class MedicationTile extends StatelessWidget {
         DoseSlotStatus.taken => ADHDColors.taken,
         DoseSlotStatus.missed => ADHDColors.missed,
         DoseSlotStatus.upcoming => ADHDColors.upcoming,
+        DoseSlotStatus.partiallyTaken => ADHDColors.snoozed,
       };
 
   IconData get _statusIcon => switch (slot.status) {
         DoseSlotStatus.taken => Icons.check_circle,
         DoseSlotStatus.missed => Icons.cancel,
         DoseSlotStatus.upcoming => Icons.schedule,
+        DoseSlotStatus.partiallyTaken => Icons.indeterminate_check_box,
       };
 
   IconData get _medicationIcon => switch (slot.medication.iconName) {

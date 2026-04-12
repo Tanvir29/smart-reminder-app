@@ -142,6 +142,7 @@ class AdherenceDashboardPage extends ConsumerWidget {
       final dayStartMs = dayStart.millisecondsSinceEpoch;
       final dayEndMs = dayEnd.millisecondsSinceEpoch;
 
+      // Use weeklyDoses for weekly calculation
       final dayDoses = state.weeklyDoses.where((dose) {
         return dose.scheduledTime >= dayStartMs &&
             dose.scheduledTime < dayEndMs;

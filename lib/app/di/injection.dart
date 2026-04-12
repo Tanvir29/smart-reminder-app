@@ -28,13 +28,11 @@ import 'package:smart_reminder_app/features/medication/domain/repositories/medic
 import 'package:smart_reminder_app/features/medication/domain/usecases/add_medication.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/record_dose.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/undo_dose.dart';
+import 'package:smart_reminder_app/features/medication/domain/usecases/get_medication_schedule.dart';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Infrastructure providers
 // ──────────────────────────────────────────────────────────────────────────────
-
-import 'dart:convert';
-import 'dart:math';
 
 final databaseProvider = FutureProvider<AppDatabase>((ref) async {
   final storage = ref.read(secureStorageProvider);
@@ -133,7 +131,7 @@ final logMissedReminderProvider = Provider<LogMissedReminder>((ref) {
 final handleAlarmFiredProvider = Provider<HandleAlarmFired>((ref) {
   return HandleAlarmFired(
     reminderRepository: ref.watch(reminderRepositoryProvider),
-    doseQueryPort: ref.watch(medicationRepositoryProvider),
+    doseQueryPort: ref.watch(doseQueryPortProvider),
     notificationPort: ref.watch(notificationServiceProvider),
     voicePort: ref.watch(voiceServiceProvider),
   );
@@ -147,12 +145,16 @@ final medicationRepositoryProvider = Provider<MedicationRepository>((ref) {
   final databaseAsync = ref.watch(databaseProvider);
   return databaseAsync.when(
     data: (db) => MedicationRepositoryImpl(
-      dao: db.medicationDao,
-      mapper: MedicationMapper(),
+      db.medicationDao,
+      MedicationMapper(),
     ),
     loading: () => throw Exception('Database not initialized'),
     error: (e, st) => throw Exception('Database error: $e'),
   );
+});
+
+final doseQueryPortProvider = Provider<DoseQueryPort>((ref) {
+  return ref.watch(medicationRepositoryProvider) as DoseQueryPort;
 });
 
 final addMedicationProvider = Provider<AddMedication>((ref) {
@@ -167,7 +169,7 @@ final recordDoseProvider = Provider<RecordDose>((ref) {
   return RecordDose(
     medicationRepository: ref.watch(medicationRepositoryProvider),
     reminderRepository: ref.watch(reminderRepositoryProvider),
-    alarmService: ref.watch(alarmServiceProvider),
+    alarmPort: ref.watch(alarmServiceProvider),
   );
 });
 
@@ -176,5 +178,12 @@ final undoDoseProvider = Provider<UndoDose>((ref) {
     medicationRepository: ref.watch(medicationRepositoryProvider),
     reminderRepository: ref.watch(reminderRepositoryProvider),
     alarmPort: ref.watch(alarmServiceProvider),
+  );
+});
+
+final getMedicationScheduleProvider = Provider<GetMedicationSchedule>((ref) {
+  return GetMedicationSchedule(
+    medicationRepository: ref.watch(medicationRepositoryProvider),
+    reminderRepository: ref.watch(reminderRepositoryProvider),
   );
 });

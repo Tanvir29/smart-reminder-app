@@ -360,10 +360,13 @@ class MedicationListPage extends ConsumerWidget {
 
   void _showBatchConfirmation(
       BuildContext context, WidgetRef ref, GroupedDoseSlot group) {
+    final confirmedMedIds = <String>{};
+
     DoseConfirmationSheet.show(
       context: context,
       group: group,
       onMedicationChecked: (medicationId) async {
+        confirmedMedIds.add(medicationId);
         final notifier = ref.read(medicationNotifierProvider.notifier);
         final slot = group.slots.firstWhere(
           (s) => s.medication.id == medicationId,
@@ -373,7 +376,33 @@ class MedicationListPage extends ConsumerWidget {
           reminderId: slot.doseRecord?.reminderId ?? '',
         );
       },
-      onAllConfirmed: () {},
+      onAllConfirmed: () {
+        _showUndoSnackBar(context, ref, confirmedMedIds.toList());
+      },
+    );
+  }
+
+  void _showUndoSnackBar(
+      BuildContext context, WidgetRef ref, List<String> medicationIds) {
+    if (medicationIds.isEmpty) return;
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 5),
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          medicationIds.length == 1
+              ? 'Dose recorded'
+              : '${medicationIds.length} doses recorded',
+        ),
+        action: SnackBarAction(
+          label: 'UNDO',
+          onPressed: () {
+            ref.read(medicationNotifierProvider.notifier).undoLastDose();
+          },
+        ),
+      ),
     );
   }
 }

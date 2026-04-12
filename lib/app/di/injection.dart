@@ -29,6 +29,7 @@ import 'package:smart_reminder_app/features/medication/domain/usecases/add_medic
 import 'package:smart_reminder_app/features/medication/domain/usecases/record_dose.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/undo_dose.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/get_medication_schedule.dart';
+import 'package:smart_reminder_app/features/medication/domain/usecases/get_adherence_stats.dart';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Infrastructure providers
@@ -185,5 +186,11 @@ final getMedicationScheduleProvider = Provider<GetMedicationSchedule>((ref) {
   return GetMedicationSchedule(
     medicationRepository: ref.watch(medicationRepositoryProvider),
     reminderRepository: ref.watch(reminderRepositoryProvider),
+  );
+});
+
+final getAdherenceStatsProvider = Provider<GetAdherenceStats>((ref) {
+  return GetAdherenceStats(
+    repository: ref.watch(medicationRepositoryProvider),
   );
 });

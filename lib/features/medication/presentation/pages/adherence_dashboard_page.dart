@@ -26,12 +26,56 @@ class AdherenceDashboardPage extends ConsumerWidget {
       body: asyncState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
-        data: (state) => _buildContent(state, theme),
+        data: (state) => _AdherenceDashboardContent(state: state, theme: theme),
       ),
     );
   }
+}
 
-  Widget _buildContent(MedicationState state, ThemeData theme) {
+class _AdherenceDashboardContent extends StatefulWidget {
+  final MedicationState state;
+  final ThemeData theme;
+
+  const _AdherenceDashboardContent({required this.state, required this.theme});
+
+  @override
+  State<_AdherenceDashboardContent> createState() =>
+      _AdherenceDashboardContentState();
+}
+
+class _AdherenceDashboardContentState
+    extends State<_AdherenceDashboardContent> {
+  bool _showThirtyDay = false;
+
+  @override
+  Widget build(BuildContext) {
+    final content =
+        _showThirtyDay ? _buildThirtyDayContent() : _buildTodayContent();
+
+    return Column(
+      children: [
+        // ── Period Toggle ─────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: false, label: Text('Today')),
+              ButtonSegment(value: true, label: Text('30 Days')),
+            ],
+            selected: {_showThirtyDay},
+            onSelectionChanged: (selected) {
+              setState(() => _showThirtyDay = selected.first);
+            },
+          ),
+        ),
+        Expanded(child: content),
+      ],
+    );
+  }
+
+  Widget _buildTodayContent() {
+    final state = widget.state;
+    final theme = widget.theme;
     final slots = state.todaySlots;
     final taken = slots.where((s) => s.status == DoseSlotStatus.taken).length;
     final missed = slots.where((s) => s.status == DoseSlotStatus.missed).length;
@@ -55,7 +99,8 @@ class AdherenceDashboardPage extends ConsumerWidget {
                   value: adherence,
                   strokeWidth: 12,
                   strokeCap: StrokeCap.round,
-                  backgroundColor: theme.colorScheme.onSurface.withOpacity(0.1),
+                  backgroundColor:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.1),
                   valueColor: AlwaysStoppedAnimation(
                     adherence >= 0.8
                         ? ADHDColors.taken
@@ -76,7 +121,8 @@ class AdherenceDashboardPage extends ConsumerWidget {
                       ),
                       Text('Today',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
                           )),
                     ],
                   ),
@@ -129,6 +175,107 @@ class AdherenceDashboardPage extends ConsumerWidget {
     );
   }
 
+  Widget _buildThirtyDayContent() {
+    final state = widget.state;
+    final theme = widget.theme;
+    final adherence = state.thirtyDayAdherencePercent;
+    final pct = (adherence * 100).round();
+
+    final taken = state.thirtyDayDoses.where((d) => d.status == 'taken').length;
+    final total = state.thirtyDayDoses.length;
+    final missed = total - taken;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // ── Big adherence ring ──────────────────────────────────────────
+        Center(
+          child: SizedBox(
+            width: 160,
+            height: 160,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CircularProgressIndicator(
+                  value: adherence,
+                  strokeWidth: 12,
+                  strokeCap: StrokeCap.round,
+                  backgroundColor:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                  valueColor: AlwaysStoppedAnimation(
+                    adherence >= 0.8
+                        ? ADHDColors.taken
+                        : adherence >= 0.5
+                            ? ADHDColors.snoozed
+                            : ADHDColors.missed,
+                  ),
+                ),
+                Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$pct%',
+                        style: theme.textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text('Last 30 Days',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
+                          )),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // ── Stat cards ──────────────────────────────────────────────────
+        Row(
+          children: [
+            _StatCard(
+              icon: Icons.check_circle,
+              color: ADHDColors.taken,
+              value: '$taken',
+              label: 'Taken',
+              theme: theme,
+            ),
+            const SizedBox(width: 8),
+            _StatCard(
+              icon: Icons.event_note,
+              color: ADHDColors.neutral,
+              value: '$total',
+              label: 'Total',
+              theme: theme,
+            ),
+            const SizedBox(width: 8),
+            _StatCard(
+              icon: Icons.warning_amber,
+              color: ADHDColors.missed,
+              value: '$missed',
+              label: 'Missed',
+              theme: theme,
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // ── 30-day trend chart placeholder ────────────────────────────────
+        Text('30-Day Trend',
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        AdherenceChart(
+          weeklyAdherence: _computeThirtyDayAdherence(state),
+        ),
+      ],
+    );
+  }
+
   List<double> _computeWeeklyAdherence(MedicationState state) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -142,7 +289,6 @@ class AdherenceDashboardPage extends ConsumerWidget {
       final dayStartMs = dayStart.millisecondsSinceEpoch;
       final dayEndMs = dayEnd.millisecondsSinceEpoch;
 
-      // Use weeklyDoses for weekly calculation
       final dayDoses = state.weeklyDoses.where((dose) {
         return dose.scheduledTime >= dayStartMs &&
             dose.scheduledTime < dayEndMs;
@@ -163,6 +309,41 @@ class AdherenceDashboardPage extends ConsumerWidget {
     }
 
     return weeklyAdherence;
+  }
+
+  List<double> _computeThirtyDayAdherence(MedicationState state) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final thirtyDayAdherence = List<double>.filled(30, 0.0);
+
+    for (int i = 0; i < 30; i++) {
+      final dayOffset = 29 - i;
+      final dayStart = today.subtract(Duration(days: dayOffset));
+      final dayEnd = dayStart.add(const Duration(days: 1));
+
+      final dayStartMs = dayStart.millisecondsSinceEpoch;
+      final dayEndMs = dayEnd.millisecondsSinceEpoch;
+
+      final dayDoses = state.thirtyDayDoses.where((dose) {
+        return dose.scheduledTime >= dayStartMs &&
+            dose.scheduledTime < dayEndMs;
+      }).toList();
+
+      if (dayDoses.isEmpty && dayOffset > 0) {
+        continue;
+      }
+
+      final taken = dayDoses.where((d) => d.status == 'taken').length;
+      final total = dayDoses.length;
+
+      if (total > 0) {
+        thirtyDayAdherence[i] = taken / total;
+      } else if (dayOffset == 0) {
+        thirtyDayAdherence[i] = state.thirtyDayAdherencePercent;
+      }
+    }
+
+    return thirtyDayAdherence;
   }
 }
 
@@ -196,7 +377,7 @@ class _StatCard extends StatelessWidget {
                       ?.copyWith(fontWeight: FontWeight.bold)),
               Text(label,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   )),
             ],
           ),

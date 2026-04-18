@@ -24,6 +24,7 @@ class MedicationState with _$MedicationState {
     @Default([]) List<Medication> medications,
     @Default([]) List<DoseRecord> todaysDoses,
     @Default([]) List<DoseRecord> weeklyDoses,
+    @Default([]) List<DoseRecord> thirtyDayDoses,
     DoseRecord? lastRecordedDose,
   }) = _MedicationState;
 
@@ -65,6 +66,14 @@ class MedicationState with _$MedicationState {
     final slots = todaySlots;
     final taken = slots.where((s) => s.status == DoseSlotStatus.taken).length;
     final missed = slots.where((s) => s.status == DoseSlotStatus.missed).length;
+    final total = taken + missed;
+    if (total == 0) return 1.0;
+    return taken / total;
+  }
+
+  double get thirtyDayAdherencePercent {
+    final taken = thirtyDayDoses.where((d) => d.status == 'taken').length;
+    final missed = thirtyDayDoses.where((d) => d.status == 'missed').length;
     final total = taken + missed;
     if (total == 0) return 1.0;
     return taken / total;

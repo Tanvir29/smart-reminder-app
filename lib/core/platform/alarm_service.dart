@@ -1,23 +1,15 @@
 import 'package:alarm/alarm.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 
-class VoicePayload {
-  final String slotName;
-  final List<String> itemNames;
-  final List<String?> customMessages;
-
-  VoicePayload({
-    required this.slotName,
-    List<String>? itemNames,
-    List<String?>? customMessages,
-  })  : itemNames = itemNames ?? [],
-        customMessages = customMessages ?? [];
-}
-
 class AlarmService implements AlarmPort {
   static final AlarmService _instance = AlarmService._internal();
   factory AlarmService() => _instance;
   AlarmService._internal();
+
+  static const int _escalationIdOffset = 2000000000;
+
+  final Map<int, String> _escalationAlarmToReminderId = {};
+  final Map<String, int> _reminderIdToEscalationAlarmId = {};
 
   Function(int, DateTime)? onAlarmRing;
 
@@ -37,23 +29,24 @@ class AlarmService implements AlarmPort {
     return dateTime.millisecondsSinceEpoch ~/ 60000;
   }
 
+  int _escalationAlarmIdFor(String reminderId) {
+    return (reminderId.hashCode.abs() % _escalationIdOffset) +
+        _escalationIdOffset;
+  }
+
   Future<bool> setAlarm({
     required int id,
     required DateTime dateTime,
     required String notificationTitle,
     required String notificationBody,
-    VoicePayload? voicePayload,
   }) async {
-    final alarmId =
-        voicePayload != null ? _generateGroupedAlarmId(dateTime) : id;
-
     final existingAlarms = await Alarm.getAlarms();
-    if (existingAlarms.any((a) => a.id == alarmId)) {
+    if (existingAlarms.any((a) => a.id == id)) {
       return true;
     }
 
     final alarmSettings = AlarmSettings(
-      id: alarmId,
+      id: id,
       dateTime: dateTime,
       assetAudioPath: 'assets/alarms/file_example_MP3_1MG.mp3',
       loopAudio: true,
@@ -63,13 +56,57 @@ class AlarmService implements AlarmPort {
         fadeDuration: const Duration(seconds: 3),
       ),
       notificationSettings: NotificationSettings(
-        title: notificationTitle,
-        body: notificationBody,
-        stopButton: 'Stop',
+        title: '',
+        body: '',
       ),
     );
 
     return await Alarm.set(alarmSettings: alarmSettings);
+  }
+
+  @override
+  Future<bool> scheduleEscalationCheck(
+    String reminderId,
+    Duration delay,
+  ) async {
+    final alarmId = _escalationAlarmIdFor(reminderId);
+
+    await cancelEscalationCheck(reminderId);
+
+    final dateTime = DateTime.now().add(delay);
+
+    _escalationAlarmToReminderId[alarmId] = reminderId;
+    _reminderIdToEscalationAlarmId[reminderId] = alarmId;
+
+    final alarmSettings = AlarmSettings(
+      id: alarmId,
+      dateTime: dateTime,
+      assetAudioPath: '',
+      loopAudio: false,
+      vibrate: false,
+      volumeSettings: VolumeSettings.fixed(volume: 0.0),
+      notificationSettings: NotificationSettings(
+        title: 'Escalation Check',
+        body: reminderId,
+      ),
+    );
+
+    return await Alarm.set(alarmSettings: alarmSettings);
+  }
+
+  @override
+  Future<void> cancelEscalationCheck(String reminderId) async {
+    final existingAlarmId = _reminderIdToEscalationAlarmId[reminderId];
+    if (existingAlarmId != null) {
+      await Alarm.stop(existingAlarmId);
+      _escalationAlarmToReminderId.remove(existingAlarmId);
+      _reminderIdToEscalationAlarmId.remove(reminderId);
+    }
+  }
+
+  @override
+  String? getReminderIdForEscalationAlarm(int alarmId) {
+    return _escalationAlarmToReminderId[alarmId];
   }
 
   Future<bool> stopAlarm(int id) async {
@@ -90,5 +127,7 @@ class AlarmService implements AlarmPort {
     for (final alarm in alarms) {
       await Alarm.stop(alarm.id);
     }
+    _escalationAlarmToReminderId.clear();
+    _reminderIdToEscalationAlarmId.clear();
   }
 }

@@ -43,7 +43,7 @@ class MedicationListPage extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.medication,
-              size: 64, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+              size: 64, color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           Text('Could not load medications',
               style: theme.textTheme.titleMedium),
@@ -131,7 +131,7 @@ class MedicationListPage extends ConsumerWidget {
           Text(
             dateStr,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 4),
@@ -151,7 +151,7 @@ class MedicationListPage extends ConsumerWidget {
                     value: total > 0 ? taken / total : 0.0,
                     minHeight: 12,
                     backgroundColor:
-                        theme.colorScheme.onSurface.withOpacity(0.1),
+                        theme.colorScheme.onSurface.withValues(alpha: 0.1),
                     valueColor: AlwaysStoppedAnimation(
                       adherence >= 0.8
                           ? ADHDColors.taken
@@ -195,7 +195,7 @@ class MedicationListPage extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: color.withOpacity(0.4), width: 1.5),
+        side: BorderSide(color: color.withValues(alpha: 0.4), width: 1.5),
       ),
       child: InkWell(
         onTap: isActionable
@@ -225,7 +225,7 @@ class MedicationListPage extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.12),
+                        color: color.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -240,7 +240,7 @@ class MedicationListPage extends ConsumerWidget {
                     const SizedBox(width: 4),
                     Icon(
                       Icons.chevron_right,
-                      color: theme.colorScheme.onSurface.withOpacity(0.3),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                     ),
                   ],
                 ],
@@ -258,10 +258,10 @@ class MedicationListPage extends ConsumerWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: slotColor.withOpacity(0.1),
+                      color: slotColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: slotColor.withOpacity(0.3),
+                        color: slotColor.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -278,7 +278,7 @@ class MedicationListPage extends ConsumerWidget {
                           slot.medication.name,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: lineThrough
-                                ? theme.colorScheme.onSurface.withOpacity(0.5)
+                                ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
                                 : null,
                             fontWeight: FontWeight.w500,
                             decoration:
@@ -336,19 +336,19 @@ class MedicationListPage extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.medication_outlined,
-              size: 80, color: theme.colorScheme.onSurface.withOpacity(0.2)),
+              size: 80, color: theme.colorScheme.onSurface.withValues(alpha: 0.2)),
           const SizedBox(height: 16),
           Text(
             'No medications yet',
             style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Tap + to add your first medication',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.4),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           ),
         ],

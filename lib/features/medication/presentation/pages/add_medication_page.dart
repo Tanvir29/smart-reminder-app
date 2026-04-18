@@ -26,6 +26,7 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
   final _nameController = TextEditingController();
   final _dosageController = TextEditingController();
   final _instructionsController = TextEditingController();
+  final _reminderMessageController = TextEditingController();
 
   String _frequencyType = 'daily';
   List<TimeOfDay> _times = [const TimeOfDay(hour: 8, minute: 0)];
@@ -45,6 +46,7 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
     _nameController.dispose();
     _dosageController.dispose();
     _instructionsController.dispose();
+    _reminderMessageController.dispose();
     super.dispose();
   }
 
@@ -139,6 +141,18 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
                 labelText: 'Instructions (optional)',
                 prefixIcon: Icon(Icons.info_outline),
                 hintText: 'e.g. Take with food',
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 16),
+
+            // ── Custom Voice Message ─────────────────────────────────────
+            TextFormField(
+              controller: _reminderMessageController,
+              decoration: const InputDecoration(
+                labelText: 'Custom Voice Message (optional)',
+                prefixIcon: Icon(Icons.record_voice_over),
+                hintText: 'e.g. Take with food, not with coffee',
               ),
               maxLines: 2,
             ),
@@ -335,13 +349,12 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
                 radius: 20,
                 backgroundColor: selected
                     ? ADHDColors.upcoming
-                    : theme.colorScheme.onSurface.withOpacity(0.1),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.1),
                 child: Text(
                   labels[i],
                   style: TextStyle(
-                    color: selected
-                        ? Colors.white
-                        : theme.colorScheme.onSurface,
+                    color:
+                        selected ? Colors.white : theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -465,15 +478,14 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
     final frequency = switch (_frequencyType) {
       'daily' => MedicationFrequency.daily(timesOfDay: timesMinutes),
       'weekly' => MedicationFrequency.weekly(
-        timesOfDay: timesMinutes,
-        weekDays: _weekDays..sort(),
-      ),
+          timesOfDay: timesMinutes,
+          weekDays: _weekDays..sort(),
+        ),
       'interval' => MedicationFrequency.interval(intervalHours: _intervalHours),
       'oneTime' => MedicationFrequency.oneTime(
-        scheduledTimeMinutes: timesMinutes.isNotEmpty
-            ? timesMinutes.first
-            : 480,
-      ),
+          scheduledTimeMinutes:
+              timesMinutes.isNotEmpty ? timesMinutes.first : 480,
+        ),
       _ => MedicationFrequency.daily(timesOfDay: timesMinutes),
     };
 
@@ -495,6 +507,9 @@ class _AddMedicationPageState extends ConsumerState<AddMedicationPage> {
       instructions: _instructionsController.text.trim().isEmpty
           ? null
           : _instructionsController.text.trim(),
+      reminderMessage: _reminderMessageController.text.trim().isEmpty
+          ? null
+          : _reminderMessageController.text.trim(),
       reminderDuration: reminderDuration,
       isCritical: _isCritical,
       createdAt: now,

@@ -37,7 +37,7 @@ class AdherenceChart extends StatelessWidget {
               final value = values[i];
               final hasData = value > 0;
               final color = !hasData
-                  ? theme.colorScheme.onSurface.withOpacity(0.1)
+                  ? theme.colorScheme.onSurface.withValues(alpha: 0.1)
                   : value >= 0.8
                       ? ADHDColors.taken
                       : value >= 0.5

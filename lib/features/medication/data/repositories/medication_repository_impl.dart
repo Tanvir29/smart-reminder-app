@@ -90,12 +90,15 @@ class MedicationRepositoryImpl implements MedicationRepository, DoseQueryPort {
   // ── DoseQueryPort implementation ─────────────────────────────────
 
   @override
-  Future<List<DoseQueryResult>> getDoseRecordsForReminder(String reminderId) async {
+  Future<List<DoseQueryResult>> getDoseRecordsForReminder(
+      String reminderId) async {
     final records = await _dao.getDoseRecordsByReminder(reminderId);
-    return records.map((r) => DoseQueryResult(
-      medicationId: r.medicationId,
-      status: r.status,
-    )).toList();
+    return records
+        .map((r) => DoseQueryResult(
+              medicationId: r.medicationId,
+              status: r.status,
+            ))
+        .toList();
   }
 
   @override
@@ -107,5 +110,17 @@ class MedicationRepositoryImpl implements MedicationRepository, DoseQueryPort {
       reminderMessage: med.reminderMessage,
       isCritical: med.isCritical,
     );
+  }
+
+  @override
+  Future<List<MedicationInfo>> getMedicationInfos(List<String> ids) async {
+    final medications = await _dao.getMedicationsByIds(ids);
+    return medications
+        .map((med) => MedicationInfo(
+              name: med.name,
+              reminderMessage: med.reminderMessage,
+              isCritical: med.isCritical,
+            ))
+        .toList();
   }
 }

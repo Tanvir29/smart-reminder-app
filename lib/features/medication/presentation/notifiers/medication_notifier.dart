@@ -37,9 +37,13 @@ class MedicationNotifier extends AsyncNotifier<MedicationState> {
     final weekStart = DateTime(now.year, now.month, now.day)
         .subtract(const Duration(days: 6))
         .millisecondsSinceEpoch;
+    final thirtyDayStart = DateTime(now.year, now.month, now.day)
+        .subtract(const Duration(days: 29))
+        .millisecondsSinceEpoch;
 
     final todaysDoses = <DoseRecord>[];
     final weeklyDoses = <DoseRecord>[];
+    final thirtyDayDoses = <DoseRecord>[];
     for (final med in medications) {
       // Today's doses
       final todayDoses = await repository.getDoseRecordsInRange(
@@ -56,12 +60,21 @@ class MedicationNotifier extends AsyncNotifier<MedicationState> {
         todayEnd,
       );
       weeklyDoses.addAll(weekDoses);
+
+      // 30-day doses for adherence dashboard
+      final monthDoses = await repository.getDoseRecordsInRange(
+        med.id,
+        thirtyDayStart,
+        todayEnd,
+      );
+      thirtyDayDoses.addAll(monthDoses);
     }
 
     return MedicationState(
       medications: medications,
       todaysDoses: todaysDoses,
       weeklyDoses: weeklyDoses,
+      thirtyDayDoses: thirtyDayDoses,
     );
   }
 

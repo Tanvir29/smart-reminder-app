@@ -34,7 +34,7 @@ class MedicationTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: color.withOpacity(0.4), width: 1.5),
+        side: BorderSide(color: color.withValues(alpha: 0.4), width: 1.5),
       ),
       child: InkWell(
         onTap: isActionable ? onTap : null,
@@ -76,7 +76,7 @@ class MedicationTile extends StatelessWidget {
                     Text(
                       slot.medication.dosage,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -104,7 +104,7 @@ class MedicationTile extends StatelessWidget {
                 const SizedBox(width: 4),
                 Icon(
                   Icons.chevron_right,
-                  color: theme.colorScheme.onSurface.withOpacity(0.3),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                 ),
               ],
             ],

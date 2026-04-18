@@ -213,7 +213,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -231,7 +231,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
                 Text(
                   '${widget.group.count} medication${widget.group.count != 1 ? 's' : ''} due',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -281,12 +281,12 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isChecked
-                      ? ADHDColors.taken.withOpacity(0.6)
-                      : theme.colorScheme.onSurface.withOpacity(0.15),
+                      ? ADHDColors.taken.withValues(alpha: 0.6)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.15),
                   width: 1.5,
                 ),
                 color: isChecked
-                    ? ADHDColors.taken.withOpacity(0.08)
+                    ? ADHDColors.taken.withValues(alpha: 0.08)
                     : Colors.transparent,
               ),
               child: Row(
@@ -302,7 +302,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
                       border: Border.all(
                         color: isChecked
                             ? ADHDColors.taken
-                            : theme.colorScheme.onSurface.withOpacity(0.4),
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.4),
                         width: 2,
                       ),
                     ),
@@ -324,7 +324,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
                             decoration:
                                 isChecked ? TextDecoration.lineThrough : null,
                             color: isChecked
-                                ? theme.colorScheme.onSurface.withOpacity(0.5)
+                                ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
                                 : null,
                           ),
                         ),
@@ -332,7 +332,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
                         Text(
                           med.dosage,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.5),
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -345,7 +345,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: ADHDColors.missed.withOpacity(0.15),
+                        color: ADHDColors.missed.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -377,7 +377,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
             child: LinearProgressIndicator(
               value: _items.isEmpty ? 0 : _checkedCount / _items.length,
               minHeight: 8,
-              backgroundColor: theme.colorScheme.onSurface.withOpacity(0.1),
+              backgroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.1),
               valueColor: const AlwaysStoppedAnimation(ADHDColors.upcoming),
             ),
           ),
@@ -385,7 +385,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
           Text(
             '$_checkedCount of ${_items.length} checked',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -473,7 +473,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
             },
             style: FilledButton.styleFrom(
               backgroundColor: Color.lerp(
-                ADHDColors.missed.withOpacity(0.6),
+                ADHDColors.missed.withValues(alpha: 0.6),
                 ADHDColors.taken,
                 _tapCount / 3,
               ),
@@ -497,7 +497,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
                 shape: BoxShape.circle,
                 color: i < _tapCount
                     ? ADHDColors.taken
-                    : theme.colorScheme.onSurface.withOpacity(0.2),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.2),
               ),
             );
           }),
@@ -514,7 +514,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
         Text(
           'Swipe to confirm',
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         const SizedBox(height: 12),
@@ -544,8 +544,8 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(thumbSize / 2),
                   color: Color.lerp(
-                    theme.colorScheme.onSurface.withOpacity(0.1),
-                    ADHDColors.taken.withOpacity(0.2),
+                    theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                    ADHDColors.taken.withValues(alpha: 0.2),
                     _swipeProgress,
                   ),
                 ),
@@ -569,13 +569,13 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
                           children: [
                             Icon(Icons.chevron_right,
                                 color: theme.colorScheme.onSurface
-                                    .withOpacity(0.3)),
+                                    .withValues(alpha: 0.3)),
                             Icon(Icons.chevron_right,
                                 color: theme.colorScheme.onSurface
-                                    .withOpacity(0.2)),
+                                    .withValues(alpha: 0.2)),
                             Icon(Icons.chevron_right,
                                 color: theme.colorScheme.onSurface
-                                    .withOpacity(0.1)),
+                                    .withValues(alpha: 0.1)),
                           ],
                         ),
                       ),
@@ -591,7 +591,7 @@ class _DoseConfirmationSheetState extends ConsumerState<DoseConfirmationSheet> {
                               ADHDColors.taken, _swipeProgress),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),

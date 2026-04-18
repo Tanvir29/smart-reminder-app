@@ -19,6 +19,7 @@ mixin _$MedicationState {
   List<Medication> get medications => throw _privateConstructorUsedError;
   List<DoseRecord> get todaysDoses => throw _privateConstructorUsedError;
   List<DoseRecord> get weeklyDoses => throw _privateConstructorUsedError;
+  List<DoseRecord> get thirtyDayDoses => throw _privateConstructorUsedError;
   DoseRecord? get lastRecordedDose => throw _privateConstructorUsedError;
 
   /// Create a copy of MedicationState
@@ -38,6 +39,7 @@ abstract class $MedicationStateCopyWith<$Res> {
       {List<Medication> medications,
       List<DoseRecord> todaysDoses,
       List<DoseRecord> weeklyDoses,
+      List<DoseRecord> thirtyDayDoses,
       DoseRecord? lastRecordedDose});
 
   $DoseRecordCopyWith<$Res>? get lastRecordedDose;
@@ -61,6 +63,7 @@ class _$MedicationStateCopyWithImpl<$Res, $Val extends MedicationState>
     Object? medications = null,
     Object? todaysDoses = null,
     Object? weeklyDoses = null,
+    Object? thirtyDayDoses = null,
     Object? lastRecordedDose = freezed,
   }) {
     return _then(_value.copyWith(
@@ -75,6 +78,10 @@ class _$MedicationStateCopyWithImpl<$Res, $Val extends MedicationState>
       weeklyDoses: null == weeklyDoses
           ? _value.weeklyDoses
           : weeklyDoses // ignore: cast_nullable_to_non_nullable
+              as List<DoseRecord>,
+      thirtyDayDoses: null == thirtyDayDoses
+          ? _value.thirtyDayDoses
+          : thirtyDayDoses // ignore: cast_nullable_to_non_nullable
               as List<DoseRecord>,
       lastRecordedDose: freezed == lastRecordedDose
           ? _value.lastRecordedDose
@@ -110,6 +117,7 @@ abstract class _$$MedicationStateImplCopyWith<$Res>
       {List<Medication> medications,
       List<DoseRecord> todaysDoses,
       List<DoseRecord> weeklyDoses,
+      List<DoseRecord> thirtyDayDoses,
       DoseRecord? lastRecordedDose});
 
   @override
@@ -132,6 +140,7 @@ class __$$MedicationStateImplCopyWithImpl<$Res>
     Object? medications = null,
     Object? todaysDoses = null,
     Object? weeklyDoses = null,
+    Object? thirtyDayDoses = null,
     Object? lastRecordedDose = freezed,
   }) {
     return _then(_$MedicationStateImpl(
@@ -146,6 +155,10 @@ class __$$MedicationStateImplCopyWithImpl<$Res>
       weeklyDoses: null == weeklyDoses
           ? _value._weeklyDoses
           : weeklyDoses // ignore: cast_nullable_to_non_nullable
+              as List<DoseRecord>,
+      thirtyDayDoses: null == thirtyDayDoses
+          ? _value._thirtyDayDoses
+          : thirtyDayDoses // ignore: cast_nullable_to_non_nullable
               as List<DoseRecord>,
       lastRecordedDose: freezed == lastRecordedDose
           ? _value.lastRecordedDose
@@ -162,10 +175,12 @@ class _$MedicationStateImpl extends _MedicationState {
       {final List<Medication> medications = const [],
       final List<DoseRecord> todaysDoses = const [],
       final List<DoseRecord> weeklyDoses = const [],
+      final List<DoseRecord> thirtyDayDoses = const [],
       this.lastRecordedDose})
       : _medications = medications,
         _todaysDoses = todaysDoses,
         _weeklyDoses = weeklyDoses,
+        _thirtyDayDoses = thirtyDayDoses,
         super._();
 
   final List<Medication> _medications;
@@ -195,12 +210,21 @@ class _$MedicationStateImpl extends _MedicationState {
     return EqualUnmodifiableListView(_weeklyDoses);
   }
 
+  final List<DoseRecord> _thirtyDayDoses;
+  @override
+  @JsonKey()
+  List<DoseRecord> get thirtyDayDoses {
+    if (_thirtyDayDoses is EqualUnmodifiableListView) return _thirtyDayDoses;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_thirtyDayDoses);
+  }
+
   @override
   final DoseRecord? lastRecordedDose;
 
   @override
   String toString() {
-    return 'MedicationState(medications: $medications, todaysDoses: $todaysDoses, weeklyDoses: $weeklyDoses, lastRecordedDose: $lastRecordedDose)';
+    return 'MedicationState(medications: $medications, todaysDoses: $todaysDoses, weeklyDoses: $weeklyDoses, thirtyDayDoses: $thirtyDayDoses, lastRecordedDose: $lastRecordedDose)';
   }
 
   @override
@@ -214,6 +238,8 @@ class _$MedicationStateImpl extends _MedicationState {
                 .equals(other._todaysDoses, _todaysDoses) &&
             const DeepCollectionEquality()
                 .equals(other._weeklyDoses, _weeklyDoses) &&
+            const DeepCollectionEquality()
+                .equals(other._thirtyDayDoses, _thirtyDayDoses) &&
             (identical(other.lastRecordedDose, lastRecordedDose) ||
                 other.lastRecordedDose == lastRecordedDose));
   }
@@ -224,6 +250,7 @@ class _$MedicationStateImpl extends _MedicationState {
       const DeepCollectionEquality().hash(_medications),
       const DeepCollectionEquality().hash(_todaysDoses),
       const DeepCollectionEquality().hash(_weeklyDoses),
+      const DeepCollectionEquality().hash(_thirtyDayDoses),
       lastRecordedDose);
 
   /// Create a copy of MedicationState
@@ -241,6 +268,7 @@ abstract class _MedicationState extends MedicationState {
       {final List<Medication> medications,
       final List<DoseRecord> todaysDoses,
       final List<DoseRecord> weeklyDoses,
+      final List<DoseRecord> thirtyDayDoses,
       final DoseRecord? lastRecordedDose}) = _$MedicationStateImpl;
   const _MedicationState._() : super._();
 
@@ -250,6 +278,8 @@ abstract class _MedicationState extends MedicationState {
   List<DoseRecord> get todaysDoses;
   @override
   List<DoseRecord> get weeklyDoses;
+  @override
+  List<DoseRecord> get thirtyDayDoses;
   @override
   DoseRecord? get lastRecordedDose;
 

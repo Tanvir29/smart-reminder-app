@@ -48,6 +48,9 @@ class FinalizeConfirmation {
     // Stop any active alarm for this reminder
     await _alarmPort.stopAlarm(reminder.id.hashCode);
 
+    // Cancel any pending escalation-check alarm
+    await _alarmPort.cancelEscalationCheck(reminderId);
+
     final logged = reminder.copyWith(
       status: ReminderStatus.logged,
       completedAt: now,

@@ -37,6 +37,7 @@ class EscalateReminder {
     // If max escalations exhausted → mark as missed
     if (newEscalationCount > reminder.policy.maxEscalations) {
       await _alarmPort.stopAlarm(reminder.id.hashCode);
+      await _alarmPort.cancelEscalationCheck(reminderId);
 
       final missed = reminder.copyWith(
         status: ReminderStatus.missed,
@@ -78,6 +79,11 @@ class EscalateReminder {
       eventTimestamp: now,
       metadata:
           'Escalation #$newEscalationCount/${reminder.policy.maxEscalations}',
+    );
+
+    await _alarmPort.scheduleEscalationCheck(
+      reminderId,
+      Duration(seconds: reminder.policy.escalationIntervalSeconds),
     );
 
     return escalated;

@@ -42,6 +42,9 @@ class HandleSnooze {
     // Stop the current alarm
     await _alarmPort.stopAlarm(reminder.id.hashCode);
 
+    // Cancel any pending escalation-check alarm
+    await _alarmPort.cancelEscalationCheck(reminderId);
+
     // §5.3: If snoozeCount >= maxSnoozes → escalate
     if (newSnoozeCount >= reminder.policy.maxSnoozes) {
       final escalated = reminder.copyWith(

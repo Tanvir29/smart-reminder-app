@@ -32,6 +32,9 @@ class LogMissedReminder {
     // Stop any active alarm
     await _alarmPort.stopAlarm(reminder.id.hashCode);
 
+    // Cancel any pending escalation-check alarm
+    await _alarmPort.cancelEscalationCheck(reminderId);
+
     final missed = reminder.copyWith(
       status: ReminderStatus.missed,
       updatedAt: now,

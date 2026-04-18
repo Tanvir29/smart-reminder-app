@@ -16,6 +16,7 @@ library;
 
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/notification_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/voice_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/dose_query_port.dart';
@@ -26,16 +27,19 @@ class HandleAlarmFired {
   final DoseQueryPort _doseQueryPort;
   final NotificationPort _notificationPort;
   final VoicePort _voicePort;
+  final AlarmPort _alarmPort;
 
   const HandleAlarmFired({
     required ReminderRepository reminderRepository,
     required DoseQueryPort doseQueryPort,
     required NotificationPort notificationPort,
     required VoicePort voicePort,
+    required AlarmPort alarmPort,
   })  : _reminderRepository = reminderRepository,
         _doseQueryPort = doseQueryPort,
         _notificationPort = notificationPort,
-        _voicePort = voicePort;
+        _voicePort = voicePort,
+        _alarmPort = alarmPort;
 
   /// Statuses that should be processed when the alarm fires.
   static const _actionableStatuses = {
@@ -83,15 +87,17 @@ class HandleAlarmFired {
       final doseQueryResults =
           await _doseQueryPort.getDoseRecordsForReminder(reminder.id);
 
+      final medicationIds =
+          doseQueryResults.map((d) => d.medicationId).toList();
+      final medicationInfos =
+          await _doseQueryPort.getMedicationInfos(medicationIds);
+
       final itemNames = <String>[];
       final customMessages = <String?>[];
 
-      for (final doseResult in doseQueryResults) {
-        final medInfo = await _doseQueryPort.getMedicationInfoById(doseResult.medicationId);
-        if (medInfo != null) {
-          itemNames.add(medInfo.name);
-          customMessages.add(medInfo.reminderMessage);
-        }
+      for (final medInfo in medicationInfos) {
+        itemNames.add(medInfo.name);
+        customMessages.add(medInfo.reminderMessage);
       }
 
       // 5. Build dynamic notification body (§7.3)
@@ -118,6 +124,12 @@ class HandleAlarmFired {
           customMessages: customMessages,
         );
       }
+
+      // 8. Schedule escalation-check alarm (§5.3 — response window timer)
+      await _alarmPort.scheduleEscalationCheck(
+        reminder.id,
+        Duration(seconds: reminder.policy.responseWindowSeconds),
+      );
     }
   }
 }

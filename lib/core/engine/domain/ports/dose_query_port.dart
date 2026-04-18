@@ -6,6 +6,7 @@
 abstract class DoseQueryPort {
   Future<List<DoseQueryResult>> getDoseRecordsForReminder(String reminderId);
   Future<MedicationInfo?> getMedicationInfoById(String id);
+  Future<List<MedicationInfo>> getMedicationInfos(List<String> ids);
 }
 
 /// Minimal data transfer object — no feature entity dependency.

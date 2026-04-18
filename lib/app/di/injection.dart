@@ -6,9 +6,6 @@ import 'package:smart_reminder_app/core/database/app_database.dart';
 import 'package:smart_reminder_app/core/engine/data/mappers/reminder_mapper.dart';
 import 'package:smart_reminder_app/core/engine/data/repositories/reminder_repository_impl.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
-import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
-import 'package:smart_reminder_app/core/engine/domain/ports/notification_port.dart';
-import 'package:smart_reminder_app/core/engine/domain/ports/voice_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/dose_query_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/handle_snooze.dart';
@@ -17,6 +14,7 @@ import 'package:smart_reminder_app/core/engine/domain/usecases/finalize_confirma
 import 'package:smart_reminder_app/core/engine/domain/usecases/escalate_reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/log_missed_reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/handle_alarm_fired.dart';
+import 'package:smart_reminder_app/core/engine/domain/usecases/handle_escalation_check.dart';
 import 'package:smart_reminder_app/core/security/data/secure_storage_impl.dart';
 import 'package:smart_reminder_app/core/security/domain/repositories/secure_storage_repository.dart';
 import 'package:smart_reminder_app/core/platform/alarm_service.dart';
@@ -26,6 +24,8 @@ import 'package:smart_reminder_app/features/medication/data/repositories/medicat
 import 'package:smart_reminder_app/features/medication/data/mappers/medication_mapper.dart';
 import 'package:smart_reminder_app/features/medication/domain/repositories/medication_repository.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/add_medication.dart';
+import 'package:smart_reminder_app/features/medication/domain/usecases/alarm_scheduler.dart';
+import 'package:smart_reminder_app/features/medication/domain/usecases/reminder_generator.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/record_dose.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/undo_dose.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/get_medication_schedule.dart';
@@ -135,6 +135,14 @@ final handleAlarmFiredProvider = Provider<HandleAlarmFired>((ref) {
     doseQueryPort: ref.watch(doseQueryPortProvider),
     notificationPort: ref.watch(notificationServiceProvider),
     voicePort: ref.watch(voiceServiceProvider),
+    alarmPort: ref.watch(alarmServiceProvider),
+  );
+});
+
+final handleEscalationCheckProvider = Provider<HandleEscalationCheck>((ref) {
+  return HandleEscalationCheck(
+    repository: ref.watch(reminderRepositoryProvider),
+    alarmPort: ref.watch(alarmServiceProvider),
   );
 });
 
@@ -155,13 +163,34 @@ final medicationRepositoryProvider = Provider<MedicationRepository>((ref) {
 });
 
 final doseQueryPortProvider = Provider<DoseQueryPort>((ref) {
-  return ref.watch(medicationRepositoryProvider) as DoseQueryPort;
+  final databaseAsync = ref.watch(databaseProvider);
+  return databaseAsync.when(
+    data: (db) => MedicationRepositoryImpl(
+      db.medicationDao,
+      MedicationMapper(),
+    ),
+    loading: () => throw Exception('Database not initialized'),
+    error: (e, st) => throw Exception('Database error: $e'),
+  );
 });
 
 final addMedicationProvider = Provider<AddMedication>((ref) {
   return AddMedication(
     medicationRepository: ref.watch(medicationRepositoryProvider),
+    reminderGenerator: ref.watch(reminderGeneratorProvider),
+    alarmScheduler: ref.watch(alarmSchedulerProvider),
+  );
+});
+
+final reminderGeneratorProvider = Provider<ReminderGenerator>((ref) {
+  return ReminderGenerator(
     reminderRepository: ref.watch(reminderRepositoryProvider),
+    medicationRepository: ref.watch(medicationRepositoryProvider),
+  );
+});
+
+final alarmSchedulerProvider = Provider<AlarmScheduler>((ref) {
+  return AlarmScheduler(
     alarmPort: ref.watch(alarmServiceProvider),
   );
 });

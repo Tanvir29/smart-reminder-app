@@ -47,6 +47,12 @@ class ReminderRepositoryImpl implements ReminderRepository {
   }
 
   @override
+  Future<List<Reminder>> getUpcoming({int limit = 10}) async {
+    final schemas = await _dao.getUpcomingScheduledReminders(limit: limit);
+    return schemas.map(_mapper.toEntity).toList();
+  }
+
+  @override
   Future<void> updateStatus(String id, ReminderStatus newStatus) async {
     final existing = await _dao.getReminderById(id);
     if (existing == null) return;

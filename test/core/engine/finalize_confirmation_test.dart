@@ -29,6 +29,9 @@ void main() {
       repository: mockRepository,
       alarmPort: mockAlarmPort,
     );
+
+    when(() => mockAlarmPort.cancelEscalationCheck(any()))
+        .thenAnswer((_) async {});
   });
 
   Reminder createTestReminder({
@@ -67,7 +70,8 @@ void main() {
 
   group('FinalizeConfirmation', () {
     test('transitions confirmationRequired to logged', () async {
-      final reminder = createTestReminder(status: ReminderStatus.confirmationRequired);
+      final reminder =
+          createTestReminder(status: ReminderStatus.confirmationRequired);
       stubFinalizeSuccess(reminder);
 
       final result = await finalizeConfirmation.call('test-reminder-1');
@@ -175,6 +179,36 @@ void main() {
 
     test('throws StateError when status is missed (terminal)', () async {
       final reminder = createTestReminder(status: ReminderStatus.missed);
+      stubFinalizeSuccess(reminder);
+
+      expect(
+        () => finalizeConfirmation.call('test-reminder-1'),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('throws StateError when status is scheduled', () async {
+      final reminder = createTestReminder(status: ReminderStatus.scheduled);
+      stubFinalizeSuccess(reminder);
+
+      expect(
+        () => finalizeConfirmation.call('test-reminder-1'),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('throws StateError when status is snoozed', () async {
+      final reminder = createTestReminder(status: ReminderStatus.snoozed);
+      stubFinalizeSuccess(reminder);
+
+      expect(
+        () => finalizeConfirmation.call('test-reminder-1'),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('throws StateError when status is cancelled', () async {
+      final reminder = createTestReminder(status: ReminderStatus.cancelled);
       stubFinalizeSuccess(reminder);
 
       expect(

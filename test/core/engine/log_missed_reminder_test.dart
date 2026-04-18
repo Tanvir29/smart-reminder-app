@@ -29,15 +29,9 @@ void main() {
       repository: mockRepository,
       alarmPort: mockAlarmPort,
     );
-  });
 
-  setUp(() {
-    mockRepository = MockReminderRepository();
-    mockAlarmPort = MockAlarmService();
-    logMissedReminder = LogMissedReminder(
-      repository: mockRepository,
-      alarmService: mockAlarmPort,
-    );
+    when(() => mockAlarmPort.cancelEscalationCheck(any()))
+        .thenAnswer((_) async {});
   });
 
   /// Creates a test [Reminder] in escalating state.

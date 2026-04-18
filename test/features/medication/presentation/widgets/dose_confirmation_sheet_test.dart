@@ -212,7 +212,7 @@ void main() {
           expect(find.text('Swipe to confirm'), findsOneWidget);
 
           final slider = find.byType(GestureDetector).last;
-          await tester.drag(slider, const Offset(300, 0));
+          await tester.drag(slider, const Offset(800, 0));
           await tester.pumpAndSettle();
 
           expect(confirmed, isTrue);

@@ -4,7 +4,7 @@ import 'package:smart_reminder_app/core/engine/domain/entities/escalation_policy
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/features/medication/domain/entities/dose.dart';
 import 'package:smart_reminder_app/features/medication/domain/repositories/medication_repository.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/record_dose.dart';
@@ -15,7 +15,7 @@ class MockMedicationRepository extends Mock implements MedicationRepository {}
 
 class MockReminderRepository extends Mock implements ReminderRepository {}
 
-class MockAlarmService extends Mock implements AlarmService {}
+class MockAlarmPort extends Mock implements AlarmPort {}
 
 // ─── Fallback values ─────────────────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ DoseRecord _createDoseRecord({
 void main() {
   late MockMedicationRepository mockMedicationRepo;
   late MockReminderRepository mockReminderRepo;
-  late MockAlarmService mockAlarmService;
+  late MockAlarmPort mockAlarmPort;
   late RecordDose recordDose;
 
   setUpAll(() {
@@ -78,11 +78,11 @@ void main() {
   setUp(() {
     mockMedicationRepo = MockMedicationRepository();
     mockReminderRepo = MockReminderRepository();
-    mockAlarmService = MockAlarmService();
+    mockAlarmPort = MockAlarmPort();
     recordDose = RecordDose(
       medicationRepository: mockMedicationRepo,
       reminderRepository: mockReminderRepo,
-      alarmService: mockAlarmService,
+      alarmPort: mockAlarmPort,
     );
   });
 
@@ -99,7 +99,7 @@ void main() {
         .thenAnswer((_) async => existingDoseRecords);
     when(() => mockReminderRepo.updateStatus(any(), any()))
         .thenAnswer((_) async {});
-    when(() => mockAlarmService.stopAlarm(any())).thenAnswer((_) async => true);
+    when(() => mockAlarmPort.stopAlarm(any())).thenAnswer((_) async => true);
   }
 
   group('RecordDose', () {
@@ -137,7 +137,7 @@ void main() {
           () => mockReminderRepo.updateStatus('rem-1', ReminderStatus.logged),
         ).called(1);
         verify(
-          () => mockAlarmService.stopAlarm('rem-1'.hashCode),
+          () => mockAlarmPort.stopAlarm('rem-1'.hashCode),
         ).called(1);
       },
     );
@@ -162,7 +162,7 @@ void main() {
           () => mockReminderRepo.updateStatus(any(), any()),
         );
         verifyNever(
-          () => mockAlarmService.stopAlarm(any()),
+          () => mockAlarmPort.stopAlarm(any()),
         );
       },
     );
@@ -201,7 +201,7 @@ void main() {
           () => mockReminderRepo.updateStatus('rem-1', ReminderStatus.logged),
         ).called(1);
         verify(
-          () => mockAlarmService.stopAlarm('rem-1'.hashCode),
+          () => mockAlarmPort.stopAlarm('rem-1'.hashCode),
         ).called(1);
       },
     );
@@ -249,7 +249,7 @@ void main() {
           () => mockReminderRepo.updateStatus(any(), any()),
         );
         verifyNever(
-          () => mockAlarmService.stopAlarm(any()),
+          () => mockAlarmPort.stopAlarm(any()),
         );
       },
     );
@@ -310,7 +310,7 @@ void main() {
         );
         when(() => mockReminderRepo.updateStatus(any(), any()))
             .thenAnswer((_) async {});
-        when(() => mockAlarmService.stopAlarm(any()))
+        when(() => mockAlarmPort.stopAlarm(any()))
             .thenAnswer((_) async => true);
 
         final result = await recordDose.call(

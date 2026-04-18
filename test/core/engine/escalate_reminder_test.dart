@@ -21,6 +21,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(FakeReminder());
     registerFallbackValue(DateTime(2024));
+    registerFallbackValue(Duration.zero);
   });
 
   setUp(() {
@@ -30,15 +31,12 @@ void main() {
       repository: mockRepository,
       alarmPort: mockAlarmPort,
     );
-  });
 
-  setUp(() {
-    mockRepository = MockReminderRepository();
-    mockAlarmPort = MockAlarmService();
-    escalateReminder = EscalateReminder(
-      repository: mockRepository,
-      alarmService: mockAlarmPort,
-    );
+    when(
+      () => mockAlarmPort.scheduleEscalationCheck(any(), any()),
+    ).thenAnswer((_) async => true);
+    when(() => mockAlarmPort.cancelEscalationCheck(any()))
+        .thenAnswer((_) async {});
   });
 
   /// Creates a test [Reminder] with configurable escalation state.
@@ -275,6 +273,48 @@ void main() {
           notificationBody: 'Preparing your reminder...',
         ),
       ).called(1);
+    });
+
+    test('schedules next escalation check after successful escalation',
+        () async {
+      final reminder = createTestReminder(
+        escalationCount: 0,
+        maxEscalations: 3,
+      );
+      stubEscalateSuccess(reminder);
+
+      await escalateReminder.call('test-reminder-1');
+
+      verify(
+        () => mockAlarmPort.scheduleEscalationCheck(
+          'test-reminder-1',
+          const Duration(seconds: 600),
+        ),
+      ).called(1);
+    });
+
+    test('cancels escalation check when transitioning to missed', () async {
+      final reminder =
+          createTestReminder(escalationCount: 3, maxEscalations: 3);
+      stubEscalateSuccess(reminder);
+
+      await escalateReminder.call('test-reminder-1');
+
+      verify(() => mockAlarmPort.cancelEscalationCheck('test-reminder-1'))
+          .called(1);
+    });
+
+    test('does NOT schedule escalation check when transitioning to missed',
+        () async {
+      final reminder =
+          createTestReminder(escalationCount: 3, maxEscalations: 3);
+      stubEscalateSuccess(reminder);
+
+      await escalateReminder.call('test-reminder-1');
+
+      verifyNever(
+        () => mockAlarmPort.scheduleEscalationCheck(any(), any()),
+      );
     });
   });
 }

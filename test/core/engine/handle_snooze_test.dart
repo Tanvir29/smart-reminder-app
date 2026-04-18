@@ -21,6 +21,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(FakeReminder());
     registerFallbackValue(DateTime(2024));
+    registerFallbackValue(Duration.zero);
   });
 
   setUp(() {
@@ -30,15 +31,9 @@ void main() {
       repository: mockRepository,
       alarmPort: mockAlarmPort,
     );
-  });
 
-  setUp(() {
-    mockRepository = MockReminderRepository();
-    mockAlarmPort = MockAlarmService();
-    handleSnooze = HandleSnooze(
-      repository: mockRepository,
-      alarmService: mockAlarmPort,
-    );
+    when(() => mockAlarmPort.cancelEscalationCheck(any()))
+        .thenAnswer((_) async {});
   });
 
   /// Creates a test [Reminder] with configurable snooze state and policy.

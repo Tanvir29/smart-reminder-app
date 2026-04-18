@@ -7,7 +7,6 @@ import 'package:smart_reminder_app/features/medication/presentation/widgets/medi
 void main() {
   group('MedicationTile', () {
     late Medication testMedication;
-    late TodayDoseSlot testSlot;
 
     setUp(() {
       final now = DateTime.now().toUtc().millisecondsSinceEpoch;

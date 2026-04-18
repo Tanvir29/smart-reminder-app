@@ -163,5 +163,26 @@ void main() {
         throwsA(isA<StateError>()),
       );
     });
+
+    test('throws StateError when status is confirmationRequired', () async {
+      final reminder =
+          createTestReminder(status: ReminderStatus.confirmationRequired);
+      stubConfirmSuccess(reminder);
+
+      expect(
+        () => confirmReminder.call('test-reminder-1'),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('throws StateError when status is cancelled', () async {
+      final reminder = createTestReminder(status: ReminderStatus.cancelled);
+      stubConfirmSuccess(reminder);
+
+      expect(
+        () => confirmReminder.call('test-reminder-1'),
+        throwsA(isA<StateError>()),
+      );
+    });
   });
 }

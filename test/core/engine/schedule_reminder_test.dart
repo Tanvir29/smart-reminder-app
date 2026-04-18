@@ -32,15 +32,6 @@ void main() {
     );
   });
 
-  setUp(() {
-    mockRepository = MockReminderRepository();
-    mockAlarmPort = MockAlarmService();
-    scheduleReminder = ScheduleReminder(
-      repository: mockRepository,
-      alarmService: mockAlarmPort,
-    );
-  });
-
   /// Creates a test [Reminder] for scheduling.
   Reminder createTestReminder({
     String id = 'test-reminder-1',

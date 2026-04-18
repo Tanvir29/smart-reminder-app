@@ -42,6 +42,7 @@ dev_dependencies:
   json_serializable: ^6.7.1
   mocktail: ^1.0.4
   riverpod_generator: ^2.6.0
+  sqlite3: ^2.4.0
 
 flutter:
   uses-material-design: true

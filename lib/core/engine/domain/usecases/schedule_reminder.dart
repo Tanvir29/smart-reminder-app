@@ -6,18 +6,18 @@ library;
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 
 /// Schedules a reminder and registers an exact alarm.
 class ScheduleReminder {
   final ReminderRepository _repository;
-  final AlarmService _alarmService;
+  final AlarmPort _alarmPort;
 
   const ScheduleReminder({
     required ReminderRepository repository,
-    required AlarmService alarmService,
+    required AlarmPort alarmPort,
   })  : _repository = repository,
-        _alarmService = alarmService;
+        _alarmPort = alarmPort;
 
   /// Persists [reminder] with status [ReminderStatus.scheduled],
   /// registers a platform alarm, and logs the scheduling event.
@@ -33,7 +33,7 @@ class ScheduleReminder {
 
     // Use generic placeholder — HandleAlarmFired will construct
     // the dynamic notification body at alarm-fire-time.
-    await _alarmService.setAlarm(
+    await _alarmPort.setAlarm(
       id: scheduled.id.hashCode,
       dateTime: DateTime.fromMillisecondsSinceEpoch(scheduled.scheduledTime),
       notificationTitle: 'Medication Reminder',

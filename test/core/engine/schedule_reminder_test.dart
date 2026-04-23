@@ -4,45 +4,31 @@ import 'package:smart_reminder_app/core/engine/domain/entities/escalation_policy
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_reminder.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
-
-// ─── Mocks ───────────────────────────────────────────────────────────────────
 
 class MockReminderRepository extends Mock implements ReminderRepository {}
 
-class MockAlarmService extends Mock implements AlarmService {}
+class MockAlarmPort extends Mock implements AlarmPort {}
 
-// ─── Tests ───────────────────────────────────────────────────────────────────
+class FakeReminder extends Fake implements Reminder {}
 
 void main() {
   late MockReminderRepository mockRepository;
-  late MockAlarmService mockAlarmService;
+  late MockAlarmPort mockAlarmPort;
   late ScheduleReminder scheduleReminder;
 
   setUpAll(() {
-    registerFallbackValue(
-      Reminder(
-        id: '',
-        profileId: '',
-        type: '',
-        title: '',
-        status: ReminderStatus.scheduled,
-        scheduledTime: 0,
-        policy: const EscalationPolicy(),
-        createdAt: 0,
-        updatedAt: 0,
-      ),
-    );
+    registerFallbackValue(FakeReminder());
     registerFallbackValue(DateTime(2024));
   });
 
   setUp(() {
     mockRepository = MockReminderRepository();
-    mockAlarmService = MockAlarmService();
+    mockAlarmPort = MockAlarmPort();
     scheduleReminder = ScheduleReminder(
       repository: mockRepository,
-      alarmService: mockAlarmService,
+      alarmPort: mockAlarmPort,
     );
   });
 
@@ -72,7 +58,7 @@ void main() {
   void stubScheduleSuccess() {
     when(() => mockRepository.save(any())).thenAnswer((_) async {});
     when(
-      () => mockAlarmService.setAlarm(
+      () => mockAlarmPort.setAlarm(
         id: any(named: 'id'),
         dateTime: any(named: 'dateTime'),
         notificationTitle: any(named: 'notificationTitle'),
@@ -129,29 +115,33 @@ void main() {
 
       await scheduleReminder.call(reminder);
 
+      // Lazy notification: generic placeholder at schedule-time,
+      // HandleAlarmFired builds dynamic content at fire-time
       verify(
-        () => mockAlarmService.setAlarm(
+        () => mockAlarmPort.setAlarm(
           id: reminder.id.hashCode,
           dateTime: DateTime.fromMillisecondsSinceEpoch(scheduledTime),
-          notificationTitle: 'Take Medicine',
-          notificationBody: 'Time to take your vitamins',
+          notificationTitle: 'Medication Reminder',
+          notificationBody: 'Preparing your reminder...',
         ),
       ).called(1);
     });
 
-    test('passes empty string for notificationBody when body is null',
+    test('passes generic placeholder for notificationBody (lazy construction)',
         () async {
       final reminder = createTestReminder(body: null);
       stubScheduleSuccess();
 
       await scheduleReminder.call(reminder);
 
+      // Lazy notification: generic placeholder at schedule-time,
+      // HandleAlarmFired builds dynamic content at fire-time
       verify(
-        () => mockAlarmService.setAlarm(
+        () => mockAlarmPort.setAlarm(
           id: any(named: 'id'),
           dateTime: any(named: 'dateTime'),
-          notificationTitle: 'Take Medicine',
-          notificationBody: '',
+          notificationTitle: 'Medication Reminder',
+          notificationBody: 'Preparing your reminder...',
         ),
       ).called(1);
     });
@@ -193,7 +183,7 @@ void main() {
         callOrder.add('save');
       });
       when(
-        () => mockAlarmService.setAlarm(
+        () => mockAlarmPort.setAlarm(
           id: any(named: 'id'),
           dateTime: any(named: 'dateTime'),
           notificationTitle: any(named: 'notificationTitle'),

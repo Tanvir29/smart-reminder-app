@@ -7,7 +7,7 @@ library;
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 
 /// Handles snooze: cancels current alarm, reschedules with increasing delay.
 ///
@@ -19,13 +19,13 @@ import 'package:smart_reminder_app/core/platform/alarm_service.dart';
 /// instead of [ReminderStatus.snoozed].
 class HandleSnooze {
   final ReminderRepository _repository;
-  final AlarmService _alarmService;
+  final AlarmPort _alarmPort;
 
   const HandleSnooze({
     required ReminderRepository repository,
-    required AlarmService alarmService,
+    required AlarmPort alarmPort,
   })  : _repository = repository,
-        _alarmService = alarmService;
+        _alarmPort = alarmPort;
 
   /// Executes snooze logic for the reminder identified by [reminderId].
   ///
@@ -40,7 +40,10 @@ class HandleSnooze {
     final newSnoozeCount = reminder.snoozeCount + 1;
 
     // Stop the current alarm
-    await _alarmService.stopAlarm(reminder.id.hashCode);
+    await _alarmPort.stopAlarm(reminder.id.hashCode);
+
+    // Cancel any pending escalation-check alarm
+    await _alarmPort.cancelEscalationCheck(reminderId);
 
     // §5.3: If snoozeCount >= maxSnoozes → escalate
     if (newSnoozeCount >= reminder.policy.maxSnoozes) {
@@ -77,7 +80,7 @@ class HandleSnooze {
     await _repository.save(snoozed);
 
     // Re-schedule the alarm with new delay — use generic placeholder
-    await _alarmService.setAlarm(
+    await _alarmPort.setAlarm(
       id: snoozed.id.hashCode,
       dateTime: DateTime.fromMillisecondsSinceEpoch(newScheduledTime),
       notificationTitle: 'Medication Reminder',

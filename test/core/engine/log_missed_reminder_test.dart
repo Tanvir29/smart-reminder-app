@@ -4,45 +4,41 @@ import 'package:smart_reminder_app/core/engine/domain/entities/escalation_policy
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/log_missed_reminder.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
-
-// ─── Mocks ───────────────────────────────────────────────────────────────────
+import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_next_reminder.dart';
 
 class MockReminderRepository extends Mock implements ReminderRepository {}
 
-class MockAlarmService extends Mock implements AlarmService {}
+class MockAlarmPort extends Mock implements AlarmPort {}
 
-// ─── Tests ───────────────────────────────────────────────────────────────────
+class MockScheduleNextReminder extends Mock implements ScheduleNextReminder {}
+
+class FakeReminder extends Fake implements Reminder {}
 
 void main() {
   late MockReminderRepository mockRepository;
-  late MockAlarmService mockAlarmService;
+  late MockAlarmPort mockAlarmPort;
+  late MockScheduleNextReminder mockScheduleNextReminder;
   late LogMissedReminder logMissedReminder;
 
   setUpAll(() {
-    registerFallbackValue(
-      Reminder(
-        id: '',
-        profileId: '',
-        type: '',
-        title: '',
-        status: ReminderStatus.scheduled,
-        scheduledTime: 0,
-        policy: const EscalationPolicy(),
-        createdAt: 0,
-        updatedAt: 0,
-      ),
-    );
+    registerFallbackValue(FakeReminder());
   });
 
   setUp(() {
     mockRepository = MockReminderRepository();
-    mockAlarmService = MockAlarmService();
+    mockAlarmPort = MockAlarmPort();
+    mockScheduleNextReminder = MockScheduleNextReminder();
+    when(() => mockScheduleNextReminder()).thenAnswer((_) async => null);
     logMissedReminder = LogMissedReminder(
       repository: mockRepository,
-      alarmService: mockAlarmService,
+      alarmPort: mockAlarmPort,
+      scheduleNextReminder: mockScheduleNextReminder,
     );
+
+    when(() => mockAlarmPort.cancelEscalationCheck(any()))
+        .thenAnswer((_) async {});
   });
 
   /// Creates a test [Reminder] in escalating state.
@@ -71,7 +67,7 @@ void main() {
   void stubLogMissedSuccess(Reminder reminder) {
     when(() => mockRepository.getById(reminder.id))
         .thenAnswer((_) async => reminder);
-    when(() => mockAlarmService.stopAlarm(any())).thenAnswer((_) async => true);
+    when(() => mockAlarmPort.stopAlarm(any())).thenAnswer((_) async => true);
     when(() => mockRepository.save(any())).thenAnswer((_) async {});
     when(
       () => mockRepository.logEvent(
@@ -109,7 +105,7 @@ void main() {
 
       await logMissedReminder.call('test-reminder-1');
 
-      verify(() => mockAlarmService.stopAlarm(reminder.id.hashCode)).called(1);
+      verify(() => mockAlarmPort.stopAlarm(reminder.id.hashCode)).called(1);
     });
 
     test('saves the updated reminder to repository', () async {
@@ -155,7 +151,7 @@ void main() {
 
       when(() => mockRepository.getById(reminder.id))
           .thenAnswer((_) async => reminder);
-      when(() => mockAlarmService.stopAlarm(any())).thenAnswer((_) async {
+      when(() => mockAlarmPort.stopAlarm(any())).thenAnswer((_) async {
         callOrder.add('stopAlarm');
         return true;
       });

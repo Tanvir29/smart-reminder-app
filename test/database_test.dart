@@ -1,10 +1,12 @@
 import 'dart:ffi';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart' hide isNotNull;
 import 'package:matcher/matcher.dart' show isNotNull;
 import 'package:smart_reminder_app/core/database/app_database.dart';
+import 'package:smart_reminder_app/core/database/app_database.dart' as drift_db;
 import 'package:sqlite3/open.dart';
 
 void main() {
@@ -40,8 +42,8 @@ void main() {
       expect(result.first.read<int>('val'), equals(1));
     });
 
-    test('DB schema version is 1', () {
-      expect(db.schemaVersion, equals(1));
+    test('DB schema version is 2', () {
+      expect(db.schemaVersion, equals(2));
     });
 
     test('All DAOs are initialized', () {
@@ -51,6 +53,86 @@ void main() {
       expect(db.cycleDao, isNotNull);
       expect(db.gamificationDao, isNotNull);
       expect(db.appSettingsDao, isNotNull);
+    });
+
+    test('All 11 tables exist in schema', () async {
+      final result = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
+          )
+          .get();
+
+      final tableNames = result.map((row) => row.read<String>('name')).toList();
+
+      expect(
+          tableNames,
+          containsAll([
+            'profiles',
+            'reminders',
+            'reminder_logs',
+            'medications',
+            'dose_records',
+            'cycle_entries',
+            'cycle_predictions',
+            'xp_events',
+            'streaks',
+            'achievements',
+            'app_settings',
+          ]));
+    });
+
+    test('Foreign key: dose record references medication', () async {
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      await db.medicationDao.insertMedication(MedicationsCompanion(
+        id: const Value('med-fk-test'),
+        profileId: const Value('default'),
+        name: const Value('FK Test Med'),
+        dosage: const Value('10mg'),
+        frequency: const Value('{"type":"daily","timesOfDay":[480]}'),
+        reminderDuration: const Value('{"type":"fixedDays","days":7}'),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ));
+
+      await db.medicationDao.recordDose(DoseRecordsCompanion(
+        id: const Value('dose-fk-test'),
+        profileId: const Value('default'),
+        medicationId: const Value('med-fk-test'),
+        scheduledTime: Value(now),
+        status: const Value('taken'),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ));
+
+      final doses =
+          await db.medicationDao.getDoseRecordsByMedication('med-fk-test');
+      expect(doses, hasLength(1));
+      expect(doses.first.medicationId, equals('med-fk-test'));
+    });
+
+    test('Unique constraint: duplicate CycleEntry profileId+date throws',
+        () async {
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      await db.cycleDao.insertCycleEntry(CycleEntriesCompanion(
+        id: const Value('cycle-1'),
+        profileId: const Value('default'),
+        date: const Value('2026-01-15'),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ));
+
+      expect(
+        () => db.cycleDao.insertCycleEntry(CycleEntriesCompanion(
+          id: const Value('cycle-2'),
+          profileId: const Value('default'),
+          date: const Value('2026-01-15'),
+          createdAt: Value(now),
+          updatedAt: Value(now),
+        )),
+        throwsA(anything),
+      );
     });
   });
 }

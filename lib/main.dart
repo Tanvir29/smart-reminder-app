@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart'; // Add this
 import 'package:smart_reminder_app/app/app.dart';
 import 'package:smart_reminder_app/app/di/injection.dart';
+import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
+import 'package:smart_reminder_app/core/platform/alarm_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,23 +15,89 @@ void main() async {
 
     final alarmService = container.read(alarmServiceProvider);
     final notificationService = container.read(notificationServiceProvider);
+    final permissionService = container.read(permissionServiceProvider);
 
     await alarmService.init();
     await notificationService.init();
+    final voiceService = container.read(voiceServiceProvider);
+    await voiceService.init();
 
-    // Wire HandleAlarmFired to alarm callback for lazy notification/voice construction
     final handleAlarmFired = container.read(handleAlarmFiredProvider);
+    final handleEscalationCheck = container.read(handleEscalationCheckProvider);
+    final handleSnooze = container.read(handleSnoozeProvider);
+    final confirmReminder = container.read(confirmReminderProvider);
+    final reminderRepository = container.read(reminderRepositoryProvider);
+    final scheduleNextReminder =
+        container.read(scheduleNextReminderProvider);
+
+    final activeEscalationReminderIds = await reminderRepository
+        .getIdsByStatuses({'triggered', 'escalating'});
+    alarmService.recoverEscalationState(activeEscalationReminderIds);
+
+    final upcoming = await reminderRepository.getUpcoming(limit: 1);
+    if (upcoming.isNotEmpty) {
+      final isActive =
+          await alarmService.isAlarmActive(upcoming.first.id.hashCode);
+      if (!isActive) {
+        await scheduleNextReminder();
+      }
+    }
+
+    final permissions = await permissionService.checkAllCritical();
+    if (!permissions.values.every((granted) => granted)) {
+      await permissionService.requestNotificationPermission();
+    }
+
+    Future<void> recoverAndHandleEscalation(int alarmId) async {
+      final active = await reminderRepository
+          .getIdsByStatuses({'triggered', 'escalating'});
+      for (final rid in active) {
+        final expectedAlarmId =
+            (rid.hashCode.abs() % AlarmService.escalationIdOffset) +
+                AlarmService.escalationIdOffset;
+        if (expectedAlarmId == alarmId) {
+          alarmService.recoverEscalationState([rid]);
+          await handleEscalationCheck.call(rid);
+          return;
+        }
+      }
+      handleAlarmFired.call(alarmId, DateTime.now());
+    }
+
     alarmService.onAlarmRing = (int alarmId, DateTime alarmDateTime) {
-      handleAlarmFired.call(alarmId, alarmDateTime);
+      final reminderId = alarmService.getReminderIdForEscalationAlarm(alarmId);
+      if (reminderId != null) {
+        handleEscalationCheck.call(reminderId);
+      } else if (alarmId >= AlarmService.escalationIdOffset) {
+        recoverAndHandleEscalation(alarmId);
+      } else {
+        handleAlarmFired.call(alarmId, alarmDateTime);
+      }
     };
 
-    // --- START OF TEST INJECTION ---
-    await _runHardwareReliabilitySetup(alarmService);
-    // --- END OF TEST INJECTION ---
+    notificationService.onActionPressed =
+        (String action, String? reminderId) async {
+      if (reminderId == null) return;
+      switch (action) {
+        case 'dismiss':
+          await alarmService.stopAlarm(reminderId.hashCode);
+        case 'snooze_all':
+        case 'snooze':
+          await handleSnooze.call(reminderId);
+        case 'view_take':
+        case 'done':
+          final reminder = await reminderRepository.getById(reminderId);
+          if (reminder != null &&
+              (reminder.status == ReminderStatus.triggered ||
+                  reminder.status == ReminderStatus.confirmationRequired)) {
+            await confirmReminder.call(reminderId);
+          }
+      }
+    };
 
-    print('✅ Infrastructure Initialized & Test Alarm Scheduled');
+    debugPrint('Infrastructure Initialized');
   } catch (e) {
-    print('❌ Initialization Failed: $e');
+    debugPrint('Initialization Failed: $e');
   }
 
   runApp(
@@ -39,27 +106,4 @@ void main() async {
       child: const SmartReminderApp(),
     ),
   );
-}
-
-/// Self-executing test logic for Points 3 and 4
-Future<void> _runHardwareReliabilitySetup(dynamic alarmService) async {
-  // 1. Request necessary permissions for Android 13+ and Android 15
-  await [
-    Permission.notification,
-    Permission.scheduleExactAlarm,
-    Permission.ignoreBatteryOptimizations, // Critical for Doze mode
-  ].request();
-
-  // 2. Schedule an alarm for 5 minutes from now.
-  // This gives you time to unplug and run ADB commands or Reboot.
-  final testTime = DateTime.now().add(const Duration(minutes: 5));
-
-  await alarmService.setAlarm(
-    id: 888,
-    dateTime: testTime,
-    notificationTitle: "🚨 RELIABILITY TEST",
-    notificationBody: "If you hear this, your engine passed the test.",
-  );
-
-  print('🚀 TEST ALARM SET FOR: $testTime');
 }

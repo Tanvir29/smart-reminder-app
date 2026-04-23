@@ -4,47 +4,36 @@ import 'package:smart_reminder_app/core/engine/domain/entities/escalation_policy
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/handle_snooze.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
-
-// ─── Mocks ───────────────────────────────────────────────────────────────────
 
 class MockReminderRepository extends Mock implements ReminderRepository {}
 
-class MockAlarmService extends Mock implements AlarmService {}
+class MockAlarmPort extends Mock implements AlarmPort {}
 
-// ─── Tests ───────────────────────────────────────────────────────────────────
+class FakeReminder extends Fake implements Reminder {}
 
 void main() {
   late MockReminderRepository mockRepository;
-  late MockAlarmService mockAlarmService;
+  late MockAlarmPort mockAlarmPort;
   late HandleSnooze handleSnooze;
 
   setUpAll(() {
-    // Register fallback values for mocktail's any() matchers
-    registerFallbackValue(
-      Reminder(
-        id: '',
-        profileId: '',
-        type: '',
-        title: '',
-        status: ReminderStatus.scheduled,
-        scheduledTime: 0,
-        policy: const EscalationPolicy(),
-        createdAt: 0,
-        updatedAt: 0,
-      ),
-    );
+    registerFallbackValue(FakeReminder());
     registerFallbackValue(DateTime(2024));
+    registerFallbackValue(Duration.zero);
   });
 
   setUp(() {
     mockRepository = MockReminderRepository();
-    mockAlarmService = MockAlarmService();
+    mockAlarmPort = MockAlarmPort();
     handleSnooze = HandleSnooze(
       repository: mockRepository,
-      alarmService: mockAlarmService,
+      alarmPort: mockAlarmPort,
     );
+
+    when(() => mockAlarmPort.cancelEscalationCheck(any()))
+        .thenAnswer((_) async {});
   });
 
   /// Creates a test [Reminder] with configurable snooze state and policy.
@@ -78,10 +67,10 @@ void main() {
   void stubSnoozeSuccess(Reminder reminder) {
     when(() => mockRepository.getById(reminder.id))
         .thenAnswer((_) async => reminder);
-    when(() => mockAlarmService.stopAlarm(any())).thenAnswer((_) async => true);
+    when(() => mockAlarmPort.stopAlarm(any())).thenAnswer((_) async => true);
     when(() => mockRepository.save(any())).thenAnswer((_) async {});
     when(
-      () => mockAlarmService.setAlarm(
+      () => mockAlarmPort.setAlarm(
         id: any(named: 'id'),
         dateTime: any(named: 'dateTime'),
         notificationTitle: any(named: 'notificationTitle'),
@@ -203,7 +192,7 @@ void main() {
 
       await handleSnooze.call('test-reminder-1');
 
-      verify(() => mockAlarmService.stopAlarm(reminder.id.hashCode)).called(1);
+      verify(() => mockAlarmPort.stopAlarm(reminder.id.hashCode)).called(1);
     });
 
     test('saves the updated reminder to repository', () async {
@@ -228,13 +217,14 @@ void main() {
 
       await handleSnooze.call('test-reminder-1');
 
-      // Verify setAlarm was called (only called for snoozed, not escalating)
+      // Lazy notification: generic placeholder at schedule-time,
+      // HandleAlarmFired builds dynamic content at fire-time
       verify(
-        () => mockAlarmService.setAlarm(
+        () => mockAlarmPort.setAlarm(
           id: any(named: 'id'),
           dateTime: any(named: 'dateTime'),
-          notificationTitle: 'Take Medicine',
-          notificationBody: 'Time to take your vitamins',
+          notificationTitle: 'Medication Reminder',
+          notificationBody: 'Preparing your reminder...',
         ),
       ).called(1);
     });
@@ -249,7 +239,7 @@ void main() {
       await handleSnooze.call('test-reminder-1');
 
       verifyNever(
-        () => mockAlarmService.setAlarm(
+        () => mockAlarmPort.setAlarm(
           id: any(named: 'id'),
           dateTime: any(named: 'dateTime'),
           notificationTitle: any(named: 'notificationTitle'),

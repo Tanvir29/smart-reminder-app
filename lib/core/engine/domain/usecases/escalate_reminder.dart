@@ -8,18 +8,18 @@ library;
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
+import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 
 /// Escalates a reminder to more aggressive notification mode.
 class EscalateReminder {
   final ReminderRepository _repository;
-  final AlarmService _alarmService;
+  final AlarmPort _alarmPort;
 
   const EscalateReminder({
     required ReminderRepository repository,
-    required AlarmService alarmService,
+    required AlarmPort alarmPort,
   })  : _repository = repository,
-        _alarmService = alarmService;
+        _alarmPort = alarmPort;
 
   /// Escalates the reminder identified by [reminderId].
   ///
@@ -36,7 +36,8 @@ class EscalateReminder {
 
     // If max escalations exhausted → mark as missed
     if (newEscalationCount > reminder.policy.maxEscalations) {
-      await _alarmService.stopAlarm(reminder.id.hashCode);
+      await _alarmPort.stopAlarm(reminder.id.hashCode);
+      await _alarmPort.cancelEscalationCheck(reminderId);
 
       final missed = reminder.copyWith(
         status: ReminderStatus.missed,
@@ -65,7 +66,7 @@ class EscalateReminder {
     await _repository.save(escalated);
 
     // Fire Level 2 loud alarm (immediate) — HandleAlarmFired will add URGENT prefix
-    await _alarmService.setAlarm(
+    await _alarmPort.setAlarm(
       id: escalated.id.hashCode,
       dateTime: DateTime.fromMillisecondsSinceEpoch(now),
       notificationTitle: 'Medication Reminder',
@@ -78,6 +79,11 @@ class EscalateReminder {
       eventTimestamp: now,
       metadata:
           'Escalation #$newEscalationCount/${reminder.policy.maxEscalations}',
+    );
+
+    await _alarmPort.scheduleEscalationCheck(
+      reminderId,
+      Duration(seconds: reminder.policy.escalationIntervalSeconds),
     );
 
     return escalated;

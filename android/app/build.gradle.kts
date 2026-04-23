@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.smarthealth.smart_reminder_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         // REQUIRED FOR FLUTTER_LOCAL_NOTIFICATIONS

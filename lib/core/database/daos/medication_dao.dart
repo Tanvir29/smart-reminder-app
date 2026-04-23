@@ -14,6 +14,9 @@ class MedicationDao extends DatabaseAccessor<AppDatabase>
   Future<Medication?> getMedicationById(String id) =>
       (db.select(medications)..where((m) => m.id.equals(id))).getSingleOrNull();
 
+  Future<List<Medication>> getMedicationsByIds(List<String> ids) =>
+      (db.select(medications)..where((m) => m.id.isIn(ids))).get();
+
   Future<List<Medication>> getActiveMedications() =>
       (db.select(medications)..where((m) => m.isActive.equals(true))).get();
 

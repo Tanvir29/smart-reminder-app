@@ -38,6 +38,14 @@ class ReminderDao extends DatabaseAccessor<AppDatabase>
             ..where((r) => r.scheduledTime.equals(scheduledTime)))
           .get();
 
+  Future<List<ReminderSchema>> getUpcomingScheduledReminders(
+          {int limit = 10}) =>
+      (db.select(reminders)
+            ..where((r) => r.status.equals('scheduled'))
+            ..orderBy([(r) => OrderingTerm.asc(r.scheduledTime)])
+            ..limit(limit))
+          .get();
+
   Future<void> insertReminder(RemindersCompanion reminder) =>
       db.into(reminders).insert(reminder);
 
@@ -58,4 +66,7 @@ class ReminderDao extends DatabaseAccessor<AppDatabase>
             ..where((l) => l.reminderId.equals(reminderId))
             ..orderBy([(l) => OrderingTerm.desc(l.eventTimestamp)]))
           .get();
+
+  Future<List<ReminderSchema>> getRemindersByStatuses(List<String> statuses) =>
+      (db.select(reminders)..where((r) => r.status.isIn(statuses))).get();
 }

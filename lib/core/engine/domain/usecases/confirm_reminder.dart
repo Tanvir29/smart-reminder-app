@@ -1,55 +1,64 @@
-/// Use case: Confirm a reminder after user interaction proof.
+/// Use case: Request confirmation for a reminder.
 ///
-/// Transitions to [ReminderStatus.logged], records adherence timestamp,
-/// stops any active alarm, and stubs gamification XP award.
+/// Transitions to [ReminderStatus.confirmationRequired], starting the
+/// confirmation window. The user must then prove interaction (swipe/tap-3x)
+/// within the confirmation window (default 30s).
+///
+/// This is step 1 of the two-phase confirmation flow:
+/// 1. [ConfirmReminder] transitions triggered -> confirmationRequired
+/// 2. [FinalizeConfirmation] transitions confirmationRequired -> logged
 library;
 
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
 
-/// Confirms a reminder and records it as completed.
+/// Requests confirmation, transitioning the reminder to confirmationRequired.
+///
+/// Per spec §5.3: The user taps "Done" to enter confirmationRequired,
+/// then must prove interaction within confirmationWindowSeconds (default 30s).
 class ConfirmReminder {
   final ReminderRepository _repository;
-  final AlarmService _alarmService;
 
   const ConfirmReminder({
     required ReminderRepository repository,
-    required AlarmService alarmService,
-  })  : _repository = repository,
-        _alarmService = alarmService;
+  })  : _repository = repository;
 
-  /// Marks the reminder as [ReminderStatus.logged], stops its alarm,
-  /// and logs the confirmation event.
+  /// Transitions the reminder to [ReminderStatus.confirmationRequired],
+  /// starting the confirmation window.
+  ///
+  /// Returns the updated reminder with the confirmation timestamp.
+  /// The caller is responsible for starting the confirmation window timer.
+  ///
+  /// Throws [StateError] if the reminder is not in triggered or escalating status.
   Future<Reminder> call(String reminderId) async {
     final reminder = await _repository.getById(reminderId);
     if (reminder == null) {
       throw ArgumentError('Reminder not found: $reminderId');
     }
 
+    if (reminder.status != ReminderStatus.triggered &&
+        reminder.status != ReminderStatus.escalating) {
+      throw StateError(
+        'Invalid state: cannot confirm from ${reminder.status}',
+      );
+    }
+
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    // Stop any active alarm for this reminder
-    await _alarmService.stopAlarm(reminder.id.hashCode);
-
-    final logged = reminder.copyWith(
-      status: ReminderStatus.logged,
-      completedAt: now,
+    final confirming = reminder.copyWith(
+      status: ReminderStatus.confirmationRequired,
       updatedAt: now,
     );
 
-    await _repository.save(logged);
+    await _repository.save(confirming);
 
     await _repository.logEvent(
       reminderId: reminderId,
-      eventType: 'confirmed',
+      eventType: 'confirmation_requested',
       eventTimestamp: now,
     );
 
-    // TODO: Trigger gamification XP award (§6 — future Phase 3)
-    // e.g., gamificationService.awardXp(logged.xpValue);
-
-    return logged;
+    return confirming;
   }
 }

@@ -13,23 +13,18 @@ import 'package:smart_reminder_app/features/medication/presentation/pages/adhere
 import 'package:smart_reminder_app/features/cycle/presentation/pages/cycle_log_page.dart';
 import 'package:smart_reminder_app/features/cycle/presentation/pages/cycle_calendar_page.dart';
 import 'package:smart_reminder_app/features/insights/presentation/pages/insights_page.dart';
-import 'package:smart_reminder_app/features/test_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final goRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/test', // Change to '/medications' for production
+  initialLocation: '/medications',
   routes: [
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) => AppShell(child: child),
       routes: [
-        GoRoute(
-          path: '/test',
-          builder: (context, state) => const HardwareTestScreen(),
-        ),
         GoRoute(
           path: '/medications',
           pageBuilder: (context, state) => const NoTransitionPage(
@@ -88,11 +83,6 @@ class AppShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.medication_outlined),
             selectedIcon: Icon(Icons.medication),
-            label: 'test',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.medication_outlined),
-            selectedIcon: Icon(Icons.medication),
             label: 'Medications',
           ),
           NavigationDestination(
@@ -115,7 +105,6 @@ class AppShell extends StatelessWidget {
     if (location.startsWith('/medications')) return 0;
     if (location.startsWith('/cycle')) return 1;
     if (location.startsWith('/insights')) return 2;
-    if (location.startsWith('/test')) return 3; // For testing purposes
     return 0;
   }
 
@@ -129,9 +118,6 @@ class AppShell extends StatelessWidget {
         break;
       case 2:
         context.go('/insights');
-        break;
-      case 3:
-        context.go('/test'); // For testing purposes
         break;
     }
   }

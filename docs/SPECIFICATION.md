@@ -1048,10 +1048,11 @@ class Medication {
 }
 
 class MedicationFrequency {
-  final FrequencyType type;          // daily, weekly, asNeeded, custom
+  final FrequencyType type;          // daily, weekly, interval, oneTime
   final List<TimeOfDay> dailyTimes;  // For daily: [08:00, 20:00]
   final List<int>? weekDays;         // For weekly: [1, 3, 5] (Mon, Wed, Fri)
-  final int? intervalHours;          // For custom interval
+  final int? intervalHours;          // For interval frequency
+  final TimeOfDay? oneTimeScheduledTime; // For oneTime: specific scheduled time
 }
 
 class DoseRecord {

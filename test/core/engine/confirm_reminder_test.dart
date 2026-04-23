@@ -5,47 +5,26 @@ import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/confirm_reminder.dart';
-import 'package:smart_reminder_app/core/platform/alarm_service.dart';
-
-// ─── Mocks ───────────────────────────────────────────────────────────────────
 
 class MockReminderRepository extends Mock implements ReminderRepository {}
 
-class MockAlarmService extends Mock implements AlarmService {}
-
-// ─── Tests ───────────────────────────────────────────────────────────────────
+class FakeReminder extends Fake implements Reminder {}
 
 void main() {
   late MockReminderRepository mockRepository;
-  late MockAlarmService mockAlarmService;
   late ConfirmReminder confirmReminder;
 
   setUpAll(() {
-    registerFallbackValue(
-      Reminder(
-        id: '',
-        profileId: '',
-        type: '',
-        title: '',
-        status: ReminderStatus.scheduled,
-        scheduledTime: 0,
-        policy: const EscalationPolicy(),
-        createdAt: 0,
-        updatedAt: 0,
-      ),
-    );
+    registerFallbackValue(FakeReminder());
   });
 
   setUp(() {
     mockRepository = MockReminderRepository();
-    mockAlarmService = MockAlarmService();
     confirmReminder = ConfirmReminder(
       repository: mockRepository,
-      alarmService: mockAlarmService,
     );
   });
 
-  /// Creates a test [Reminder] in triggered state.
   Reminder createTestReminder({
     String id = 'test-reminder-1',
     ReminderStatus status = ReminderStatus.triggered,
@@ -65,11 +44,9 @@ void main() {
     );
   }
 
-  /// Stubs all repository/alarm interactions for a successful confirm.
   void stubConfirmSuccess(Reminder reminder) {
     when(() => mockRepository.getById(reminder.id))
         .thenAnswer((_) async => reminder);
-    when(() => mockAlarmService.stopAlarm(any())).thenAnswer((_) async => true);
     when(() => mockRepository.save(any())).thenAnswer((_) async {});
     when(
       () => mockRepository.logEvent(
@@ -81,25 +58,23 @@ void main() {
     ).thenAnswer((_) async {});
   }
 
-  group('ConfirmReminder', () {
-    test('transitions status to logged', () async {
-      final reminder = createTestReminder();
+  group('ConfirmReminder (two-phase flow)', () {
+    test('transitions triggered to confirmationRequired', () async {
+      final reminder = createTestReminder(status: ReminderStatus.triggered);
       stubConfirmSuccess(reminder);
 
       final result = await confirmReminder.call('test-reminder-1');
 
-      expect(result.status, equals(ReminderStatus.logged));
+      expect(result.status, equals(ReminderStatus.confirmationRequired));
     });
 
-    test('sets completedAt timestamp', () async {
-      final beforeCall = DateTime.now().millisecondsSinceEpoch;
-      final reminder = createTestReminder();
+    test('transitions escalating to confirmationRequired', () async {
+      final reminder = createTestReminder(status: ReminderStatus.escalating);
       stubConfirmSuccess(reminder);
 
       final result = await confirmReminder.call('test-reminder-1');
 
-      expect(result.completedAt, isNotNull);
-      expect(result.completedAt!, greaterThanOrEqualTo(beforeCall));
+      expect(result.status, equals(ReminderStatus.confirmationRequired));
     });
 
     test('updates updatedAt timestamp', () async {
@@ -112,15 +87,6 @@ void main() {
       expect(result.updatedAt, greaterThanOrEqualTo(beforeCall));
     });
 
-    test('stops the active alarm', () async {
-      final reminder = createTestReminder();
-      stubConfirmSuccess(reminder);
-
-      await confirmReminder.call('test-reminder-1');
-
-      verify(() => mockAlarmService.stopAlarm(reminder.id.hashCode)).called(1);
-    });
-
     test('saves the updated reminder to repository', () async {
       final reminder = createTestReminder();
       stubConfirmSuccess(reminder);
@@ -130,11 +96,10 @@ void main() {
       final captured = verify(() => mockRepository.save(captureAny()))
           .captured
           .single as Reminder;
-      expect(captured.status, equals(ReminderStatus.logged));
-      expect(captured.completedAt, isNotNull);
+      expect(captured.status, equals(ReminderStatus.confirmationRequired));
     });
 
-    test('logs the confirmed event', () async {
+    test('logs the confirmation_requested event', () async {
       final reminder = createTestReminder();
       stubConfirmSuccess(reminder);
 
@@ -143,7 +108,7 @@ void main() {
       verify(
         () => mockRepository.logEvent(
           reminderId: 'test-reminder-1',
-          eventType: 'confirmed',
+          eventType: 'confirmation_requested',
           eventTimestamp: any(named: 'eventTimestamp'),
         ),
       ).called(1);
@@ -159,51 +124,65 @@ void main() {
       );
     });
 
-    test('stops alarm before saving (ordering)', () async {
-      final reminder = createTestReminder();
-      final callOrder = <String>[];
+    test('throws StateError when status is scheduled', () async {
+      final reminder = createTestReminder(status: ReminderStatus.scheduled);
+      stubConfirmSuccess(reminder);
 
-      when(() => mockRepository.getById(reminder.id))
-          .thenAnswer((_) async => reminder);
-      when(() => mockAlarmService.stopAlarm(any())).thenAnswer((_) async {
-        callOrder.add('stopAlarm');
-        return true;
-      });
-      when(() => mockRepository.save(any())).thenAnswer((_) async {
-        callOrder.add('save');
-      });
-      when(
-        () => mockRepository.logEvent(
-          reminderId: any(named: 'reminderId'),
-          eventType: any(named: 'eventType'),
-          eventTimestamp: any(named: 'eventTimestamp'),
-          metadata: any(named: 'metadata'),
-        ),
-      ).thenAnswer((_) async {
-        callOrder.add('logEvent');
-      });
-
-      await confirmReminder.call('test-reminder-1');
-
-      expect(callOrder, equals(['stopAlarm', 'save', 'logEvent']));
+      expect(
+        () => confirmReminder.call('test-reminder-1'),
+        throwsA(isA<StateError>()),
+      );
     });
 
-    test('can confirm a snoozed reminder', () async {
+    test('throws StateError when status is snoozed', () async {
       final reminder = createTestReminder(status: ReminderStatus.snoozed);
       stubConfirmSuccess(reminder);
 
-      final result = await confirmReminder.call('test-reminder-1');
-
-      expect(result.status, equals(ReminderStatus.logged));
+      expect(
+        () => confirmReminder.call('test-reminder-1'),
+        throwsA(isA<StateError>()),
+      );
     });
 
-    test('can confirm an escalating reminder', () async {
-      final reminder = createTestReminder(status: ReminderStatus.escalating);
+    test('throws StateError when status is logged', () async {
+      final reminder = createTestReminder(status: ReminderStatus.logged);
       stubConfirmSuccess(reminder);
 
-      final result = await confirmReminder.call('test-reminder-1');
+      expect(
+        () => confirmReminder.call('test-reminder-1'),
+        throwsA(isA<StateError>()),
+      );
+    });
 
-      expect(result.status, equals(ReminderStatus.logged));
+    test('throws StateError when status is missed (terminal)', () async {
+      final reminder = createTestReminder(status: ReminderStatus.missed);
+      stubConfirmSuccess(reminder);
+
+      expect(
+        () => confirmReminder.call('test-reminder-1'),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('throws StateError when status is confirmationRequired', () async {
+      final reminder =
+          createTestReminder(status: ReminderStatus.confirmationRequired);
+      stubConfirmSuccess(reminder);
+
+      expect(
+        () => confirmReminder.call('test-reminder-1'),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('throws StateError when status is cancelled', () async {
+      final reminder = createTestReminder(status: ReminderStatus.cancelled);
+      stubConfirmSuccess(reminder);
+
+      expect(
+        () => confirmReminder.call('test-reminder-1'),
+        throwsA(isA<StateError>()),
+      );
     });
   });
 }

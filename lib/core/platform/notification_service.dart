@@ -15,7 +15,7 @@ class NotificationService implements NotificationPort {
   /// Parameters: action name, reminder ID from payload.
   Function(String action, String? reminderId)? onActionPressed;
 
-  Future<void> init() async {
+  Future<bool> init() async {
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
@@ -35,14 +35,17 @@ class NotificationService implements NotificationPort {
       onDidReceiveNotificationResponse: _handleNotificationResponse,
     );
 
-    await _notifications
+    final granted = await _notifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
+    return granted ?? false;
   }
 
   void _handleNotificationResponse(NotificationResponse response) {
-    if (response.actionId == 'snooze_all') {
+    if (response.actionId == 'dismiss') {
+      onActionPressed?.call('dismiss', response.payload);
+    } else if (response.actionId == 'snooze_all') {
       onActionPressed?.call('snooze_all', response.payload);
     } else if (response.actionId == 'view_take') {
       onActionPressed?.call('view_take', response.payload);
@@ -71,6 +74,7 @@ class NotificationService implements NotificationPort {
       priority: Priority.high,
       fullScreenIntent: isCritical,
       actions: const [
+        AndroidNotificationAction('dismiss', 'Dismiss'),
         AndroidNotificationAction('snooze_all', 'Snooze All'),
         AndroidNotificationAction('view_take', 'View/Take'),
       ],

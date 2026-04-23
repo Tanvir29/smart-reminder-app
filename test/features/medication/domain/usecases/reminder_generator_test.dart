@@ -222,10 +222,10 @@ void main() {
 
     test('time-slot merging increments groupDoseCount when reminder exists',
         () async {
-      final now = DateTime.now().toUtc();
+      final now = DateTime.now();
       final futureHour = (now.hour + 2) % 24;
       final futureMinutes = futureHour * 60 + now.minute;
-      final scheduledTime = DateTime.utc(
+      final scheduledTime = DateTime(
         now.year,
         now.month,
         now.day,

@@ -6,16 +6,20 @@ import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.da
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/finalize_confirmation.dart';
+import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_next_reminder.dart';
 
 class MockReminderRepository extends Mock implements ReminderRepository {}
 
 class MockAlarmPort extends Mock implements AlarmPort {}
+
+class MockScheduleNextReminder extends Mock implements ScheduleNextReminder {}
 
 class FakeReminder extends Fake implements Reminder {}
 
 void main() {
   late MockReminderRepository mockRepository;
   late MockAlarmPort mockAlarmPort;
+  late MockScheduleNextReminder mockScheduleNextReminder;
   late FinalizeConfirmation finalizeConfirmation;
 
   setUpAll(() {
@@ -25,9 +29,12 @@ void main() {
   setUp(() {
     mockRepository = MockReminderRepository();
     mockAlarmPort = MockAlarmPort();
+    mockScheduleNextReminder = MockScheduleNextReminder();
+    when(() => mockScheduleNextReminder()).thenAnswer((_) async => null);
     finalizeConfirmation = FinalizeConfirmation(
       repository: mockRepository,
       alarmPort: mockAlarmPort,
+      scheduleNextReminder: mockScheduleNextReminder,
     );
 
     when(() => mockAlarmPort.cancelEscalationCheck(any()))

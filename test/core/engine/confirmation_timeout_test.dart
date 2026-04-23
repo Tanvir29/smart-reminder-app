@@ -8,10 +8,13 @@ import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/confirm_reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/finalize_confirmation.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/handle_snooze.dart';
+import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_next_reminder.dart';
 
 class MockReminderRepository extends Mock implements ReminderRepository {}
 
 class MockAlarmPort extends Mock implements AlarmPort {}
+
+class MockScheduleNextReminder extends Mock implements ScheduleNextReminder {}
 
 class FakeReminder extends Fake implements Reminder {}
 
@@ -19,6 +22,7 @@ void main() {
   group('Confirmation window timeout (spec §5.3)', () {
     late MockReminderRepository mockRepository;
     late MockAlarmPort mockAlarmPort;
+    late MockScheduleNextReminder mockScheduleNextReminder;
     late ConfirmReminder confirmReminder;
     late FinalizeConfirmation finalizeConfirmation;
 
@@ -30,10 +34,13 @@ void main() {
     setUp(() {
       mockRepository = MockReminderRepository();
       mockAlarmPort = MockAlarmPort();
+      mockScheduleNextReminder = MockScheduleNextReminder();
+      when(() => mockScheduleNextReminder()).thenAnswer((_) async => null);
       confirmReminder = ConfirmReminder(repository: mockRepository);
       finalizeConfirmation = FinalizeConfirmation(
         repository: mockRepository,
         alarmPort: mockAlarmPort,
+        scheduleNextReminder: mockScheduleNextReminder,
       );
     });
 

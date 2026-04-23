@@ -9,6 +9,7 @@ import 'package:smart_reminder_app/core/engine/domain/ports/voice_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/dose_query_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/handle_alarm_fired.dart';
+import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_next_reminder.dart';
 
 class MockReminderRepository extends Mock implements ReminderRepository {}
 
@@ -19,6 +20,8 @@ class MockNotificationPort extends Mock implements NotificationPort {}
 class MockVoicePort extends Mock implements VoicePort {}
 
 class MockAlarmPort extends Mock implements AlarmPort {}
+
+class MockScheduleNextReminder extends Mock implements ScheduleNextReminder {}
 
 class FakeReminder extends Fake implements Reminder {}
 
@@ -32,6 +35,7 @@ void main() {
   late MockNotificationPort mockNotificationPort;
   late MockVoicePort mockVoicePort;
   late MockAlarmPort mockAlarmPort;
+  late MockScheduleNextReminder mockScheduleNextReminder;
   late HandleAlarmFired handleAlarmFired;
 
   setUpAll(() {
@@ -48,6 +52,7 @@ void main() {
     mockNotificationPort = MockNotificationPort();
     mockVoicePort = MockVoicePort();
     mockAlarmPort = MockAlarmPort();
+    mockScheduleNextReminder = MockScheduleNextReminder();
 
     when(
       () => mockAlarmPort.scheduleEscalationCheck(any(), any()),
@@ -56,12 +61,16 @@ void main() {
     when(() => mockDoseQueryPort.getMedicationInfos(any()))
         .thenAnswer((_) async => []);
 
+    when(() => mockScheduleNextReminder())
+        .thenAnswer((_) async => null);
+
     handleAlarmFired = HandleAlarmFired(
       reminderRepository: mockReminderRepo,
       doseQueryPort: mockDoseQueryPort,
       notificationPort: mockNotificationPort,
       voicePort: mockVoicePort,
       alarmPort: mockAlarmPort,
+      scheduleNextReminder: mockScheduleNextReminder,
     );
   });
 

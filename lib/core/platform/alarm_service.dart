@@ -1,4 +1,5 @@
 import 'package:alarm/alarm.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 
 class AlarmService implements AlarmPort {
@@ -6,7 +7,8 @@ class AlarmService implements AlarmPort {
   factory AlarmService() => _instance;
   AlarmService._internal();
 
-  static const int _escalationIdOffset = 2000000000;
+  static const int escalationIdOffset = 2000000000;
+  static const int _escalationIdOffset = escalationIdOffset;
 
   final Map<int, String> _escalationAlarmToReminderId = {};
   final Map<String, int> _reminderIdToEscalationAlarmId = {};
@@ -40,6 +42,11 @@ class AlarmService implements AlarmPort {
     required String notificationTitle,
     required String notificationBody,
   }) async {
+    final canSchedule = await Permission.scheduleExactAlarm.status.isGranted;
+    if (!canSchedule) {
+      return false;
+    }
+
     final existingAlarms = await Alarm.getAlarms();
     if (existingAlarms.any((a) => a.id == id)) {
       return true;
@@ -56,8 +63,9 @@ class AlarmService implements AlarmPort {
         fadeDuration: const Duration(seconds: 3),
       ),
       notificationSettings: NotificationSettings(
-        title: '',
-        body: '',
+        title: notificationTitle,
+        body: notificationBody,
+        stopButton: 'Dismiss',
       ),
     );
 
@@ -120,6 +128,14 @@ class AlarmService implements AlarmPort {
   Future<bool> isAlarmActive(int id) async {
     final alarms = await Alarm.getAlarms();
     return alarms.any((a) => a.id == id);
+  }
+
+  void recoverEscalationState(List<String> reminderIdsWithActiveEscalation) {
+    for (final reminderId in reminderIdsWithActiveEscalation) {
+      final alarmId = _escalationAlarmIdFor(reminderId);
+      _escalationAlarmToReminderId[alarmId] = reminderId;
+      _reminderIdToEscalationAlarmId[reminderId] = alarmId;
+    }
   }
 
   Future<void> stopAllAlarms() async {

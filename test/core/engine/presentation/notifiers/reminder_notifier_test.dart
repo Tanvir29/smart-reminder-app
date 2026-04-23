@@ -29,7 +29,9 @@ class ManualMockNotificationService implements NotificationService {
   Future<void> cancelAll() async {}
 
   @override
-  Future<void> init() async {}
+  Future<bool> init() async {
+    return true;
+  }
 
   @override
   Future<void> showCycleReminder({

@@ -4,6 +4,7 @@
 /// and schedules the earliest alarm via AlarmScheduler.
 library;
 
+import 'package:smart_reminder_app/core/engine/domain/helpers/slot_name_helper.dart';
 import 'package:smart_reminder_app/features/medication/domain/entities/medication.dart';
 import 'package:smart_reminder_app/features/medication/domain/repositories/medication_repository.dart';
 import 'package:smart_reminder_app/features/medication/domain/usecases/alarm_scheduler.dart';
@@ -38,7 +39,10 @@ class AddMedication {
     }
 
     final earliestReminder = upcomingReminders.first;
-    final slotName = _getSlotName(medication);
+    final hour =
+        DateTime.fromMillisecondsSinceEpoch(earliestReminder.scheduledTime)
+            .hour;
+    final slotName = getSlotName(hour);
 
     await _alarmScheduler.scheduleAlarm(
       reminder: earliestReminder,
@@ -46,15 +50,5 @@ class AddMedication {
     );
 
     return medication;
-  }
-
-  String _getSlotName(Medication medication) {
-    final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 9) return 'Morning Medications';
-    if (hour >= 9 && hour < 12) return 'Mid-Morning Medications';
-    if (hour >= 12 && hour < 14) return 'Afternoon Medications';
-    if (hour >= 14 && hour < 17) return 'Late Afternoon Medications';
-    if (hour >= 17 && hour < 21) return 'Evening Medications';
-    return 'Night Medications';
   }
 }

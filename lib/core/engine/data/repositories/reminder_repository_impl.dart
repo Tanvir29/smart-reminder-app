@@ -81,4 +81,10 @@ class ReminderRepositoryImpl implements ReminderRepository {
     );
     await _dao.logReminderEvent(log);
   }
+
+  @override
+  Future<List<String>> getIdsByStatuses(Set<String> statuses) async {
+    final schemas = await _dao.getRemindersByStatuses(statuses.toList());
+    return schemas.map((s) => s.id).toList();
+  }
 }

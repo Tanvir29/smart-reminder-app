@@ -8,17 +8,21 @@ import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
+import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_next_reminder.dart';
 
 /// Marks a reminder as missed after all escalation attempts.
 class LogMissedReminder {
   final ReminderRepository _repository;
   final AlarmPort _alarmPort;
+  final ScheduleNextReminder _scheduleNextReminder;
 
   const LogMissedReminder({
     required ReminderRepository repository,
     required AlarmPort alarmPort,
+    required ScheduleNextReminder scheduleNextReminder,
   })  : _repository = repository,
-        _alarmPort = alarmPort;
+        _alarmPort = alarmPort,
+        _scheduleNextReminder = scheduleNextReminder;
 
   /// Marks the reminder identified by [reminderId] as [ReminderStatus.missed].
   Future<Reminder> call(String reminderId) async {
@@ -47,6 +51,8 @@ class LogMissedReminder {
       eventType: 'missed',
       eventTimestamp: now,
     );
+
+    await _scheduleNextReminder();
 
     return missed;
   }

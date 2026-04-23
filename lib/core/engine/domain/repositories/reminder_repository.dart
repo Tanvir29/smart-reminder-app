@@ -37,4 +37,7 @@ abstract class ReminderRepository {
     required int eventTimestamp,
     String? metadata,
   });
+
+  /// Get reminder IDs that match any of the given statuses.
+  Future<List<String>> getIdsByStatuses(Set<String> statuses);
 }

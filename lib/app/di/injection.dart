@@ -15,10 +15,12 @@ import 'package:smart_reminder_app/core/engine/domain/usecases/escalate_reminder
 import 'package:smart_reminder_app/core/engine/domain/usecases/log_missed_reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/handle_alarm_fired.dart';
 import 'package:smart_reminder_app/core/engine/domain/usecases/handle_escalation_check.dart';
+import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_next_reminder.dart';
 import 'package:smart_reminder_app/core/security/data/secure_storage_impl.dart';
 import 'package:smart_reminder_app/core/security/domain/repositories/secure_storage_repository.dart';
 import 'package:smart_reminder_app/core/platform/alarm_service.dart';
 import 'package:smart_reminder_app/core/platform/notification_service.dart';
+import 'package:smart_reminder_app/core/platform/permission_service.dart';
 import 'package:smart_reminder_app/core/platform/voice_service.dart';
 import 'package:smart_reminder_app/features/medication/data/repositories/medication_repository_impl.dart';
 import 'package:smart_reminder_app/features/medication/data/mappers/medication_mapper.dart';
@@ -84,6 +86,10 @@ final voiceServiceProvider = Provider<VoiceService>((ref) {
   return VoiceService();
 });
 
+final permissionServiceProvider = Provider<PermissionService>((ref) {
+  return PermissionService();
+});
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Use case providers (Phase 2C — The Brain)
 // ──────────────────────────────────────────────────────────────────────────────
@@ -108,10 +114,18 @@ final confirmReminderProvider = Provider<ConfirmReminder>((ref) {
   );
 });
 
+final scheduleNextReminderProvider = Provider<ScheduleNextReminder>((ref) {
+  return ScheduleNextReminder(
+    repository: ref.watch(reminderRepositoryProvider),
+    alarmPort: ref.watch(alarmServiceProvider),
+  );
+});
+
 final finalizeConfirmationProvider = Provider<FinalizeConfirmation>((ref) {
   return FinalizeConfirmation(
     repository: ref.watch(reminderRepositoryProvider),
     alarmPort: ref.watch(alarmServiceProvider),
+    scheduleNextReminder: ref.watch(scheduleNextReminderProvider),
   );
 });
 
@@ -126,6 +140,7 @@ final logMissedReminderProvider = Provider<LogMissedReminder>((ref) {
   return LogMissedReminder(
     repository: ref.watch(reminderRepositoryProvider),
     alarmPort: ref.watch(alarmServiceProvider),
+    scheduleNextReminder: ref.watch(scheduleNextReminderProvider),
   );
 });
 
@@ -136,6 +151,7 @@ final handleAlarmFiredProvider = Provider<HandleAlarmFired>((ref) {
     notificationPort: ref.watch(notificationServiceProvider),
     voicePort: ref.watch(voiceServiceProvider),
     alarmPort: ref.watch(alarmServiceProvider),
+    scheduleNextReminder: ref.watch(scheduleNextReminderProvider),
   );
 });
 

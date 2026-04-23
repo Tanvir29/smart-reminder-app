@@ -20,6 +20,7 @@ import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/notification_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/voice_port.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/dose_query_port.dart';
+import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_next_reminder.dart';
 
 /// Lazily constructs notification body and voice payload when an alarm fires.
 class HandleAlarmFired {
@@ -28,6 +29,7 @@ class HandleAlarmFired {
   final NotificationPort _notificationPort;
   final VoicePort _voicePort;
   final AlarmPort _alarmPort;
+  final ScheduleNextReminder _scheduleNextReminder;
 
   const HandleAlarmFired({
     required ReminderRepository reminderRepository,
@@ -35,11 +37,13 @@ class HandleAlarmFired {
     required NotificationPort notificationPort,
     required VoicePort voicePort,
     required AlarmPort alarmPort,
+    required ScheduleNextReminder scheduleNextReminder,
   })  : _reminderRepository = reminderRepository,
         _doseQueryPort = doseQueryPort,
         _notificationPort = notificationPort,
         _voicePort = voicePort,
-        _alarmPort = alarmPort;
+        _alarmPort = alarmPort,
+        _scheduleNextReminder = scheduleNextReminder;
 
   /// Statuses that should be processed when the alarm fires.
   static const _actionableStatuses = {
@@ -131,5 +135,7 @@ class HandleAlarmFired {
         Duration(seconds: reminder.policy.responseWindowSeconds),
       );
     }
+
+    await _scheduleNextReminder();
   }
 }

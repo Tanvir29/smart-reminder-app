@@ -29,7 +29,7 @@ class ReminderGenerator {
     required Medication medication,
     required String profileId,
   }) async {
-    final now = DateTime.now().toUtc();
+    final now = DateTime.now();
     final durationDays = _calculateDurationDays(medication.reminderDuration);
 
     await _generateAndSaveReminders(
@@ -154,7 +154,7 @@ class ReminderGenerator {
     for (var dayOffset = 0; dayOffset < durationDays; dayOffset++) {
       final date = startDate.add(Duration(days: dayOffset));
       for (final minutesFromMidnight in timesOfDay) {
-        final scheduledDateTime = DateTime.utc(
+        final scheduledDateTime = DateTime(
           date.year,
           date.month,
           date.day,
@@ -186,7 +186,7 @@ class ReminderGenerator {
       final date = startDate.add(Duration(days: dayOffset));
       if (!weekDays.contains(date.weekday)) continue;
       for (final minutesFromMidnight in timesOfDay) {
-        final scheduledDateTime = DateTime.utc(
+        final scheduledDateTime = DateTime(
           date.year,
           date.month,
           date.day,
@@ -236,7 +236,7 @@ class ReminderGenerator {
   }) {
     final slots = <_TimeSlotData>[];
     final date = startDate;
-    final scheduledDateTime = DateTime.utc(
+    final scheduledDateTime = DateTime(
       date.year,
       date.month,
       date.day,

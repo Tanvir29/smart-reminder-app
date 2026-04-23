@@ -66,4 +66,7 @@ class ReminderDao extends DatabaseAccessor<AppDatabase>
             ..where((l) => l.reminderId.equals(reminderId))
             ..orderBy([(l) => OrderingTerm.desc(l.eventTimestamp)]))
           .get();
+
+  Future<List<ReminderSchema>> getRemindersByStatuses(List<String> statuses) =>
+      (db.select(reminders)..where((r) => r.status.isIn(statuses))).get();
 }

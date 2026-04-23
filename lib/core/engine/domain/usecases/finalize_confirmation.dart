@@ -8,6 +8,7 @@ import 'package:smart_reminder_app/core/engine/domain/entities/reminder.dart';
 import 'package:smart_reminder_app/core/engine/domain/entities/reminder_state.dart';
 import 'package:smart_reminder_app/core/engine/domain/repositories/reminder_repository.dart';
 import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
+import 'package:smart_reminder_app/core/engine/domain/usecases/schedule_next_reminder.dart';
 
 /// Finalizes a confirmation after the user has proven interaction.
 ///
@@ -20,12 +21,15 @@ import 'package:smart_reminder_app/core/engine/domain/ports/alarm_port.dart';
 class FinalizeConfirmation {
   final ReminderRepository _repository;
   final AlarmPort _alarmPort;
+  final ScheduleNextReminder _scheduleNextReminder;
 
   const FinalizeConfirmation({
     required ReminderRepository repository,
     required AlarmPort alarmPort,
+    required ScheduleNextReminder scheduleNextReminder,
   })  : _repository = repository,
-        _alarmPort = alarmPort;
+        _alarmPort = alarmPort,
+        _scheduleNextReminder = scheduleNextReminder;
 
   /// Finalizes the confirmation, transitioning from [ReminderStatus.confirmationRequired]
   /// to [ReminderStatus.logged].
@@ -65,8 +69,7 @@ class FinalizeConfirmation {
       eventTimestamp: now,
     );
 
-    // TODO: Trigger gamification XP award (§6 — future Phase 3)
-    // e.g., gamificationService.awardXp(logged.xpValue);
+    await _scheduleNextReminder();
 
     return logged;
   }
